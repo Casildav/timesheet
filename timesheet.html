@@ -1071,7 +1071,19 @@
             });
             const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-            // Calculate total due (earnings + reimbursable expenses)
+            /*
+             * =========================================================
+             * PROTECTED BUSINESS LOGIC - DO NOT MODIFY WITHOUT APPROVAL
+             * =========================================================
+             * Formula: Total Due = Gross Earnings + Reimbursable Expenses
+             * 
+             * Expenses are ADDED because they represent out-of-pocket
+             * costs the user paid and needs to be reimbursed for.
+             * 
+             * DO NOT change this to subtraction.
+             * See CLAUDE.md business_rules section for full context.
+             * =========================================================
+             */
             const totalDue = grossEarnings + totalExpenses;
 
             // Update display
