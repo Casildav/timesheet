@@ -566,11 +566,11 @@
                     <div class="value earnings" id="grossEarnings">$0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">Total Expenses</div>
+                    <div class="label">Reimbursable Expenses</div>
                     <div class="value expenses" id="totalExpenses">$0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">Subtotal</div>
+                    <div class="label">Total Due</div>
                     <div class="value subtotal" id="subtotal">$0.00</div>
                 </div>
             </div>
@@ -1071,14 +1071,14 @@
             });
             const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-            // Calculate subtotal
-            const subtotal = grossEarnings - totalExpenses;
+            // Calculate total due (earnings + reimbursable expenses)
+            const totalDue = grossEarnings + totalExpenses;
 
             // Update display
             document.getElementById('totalHours').textContent = totalHours.toFixed(2);
             document.getElementById('grossEarnings').textContent = `$${grossEarnings.toFixed(2)}`;
             document.getElementById('totalExpenses').textContent = `$${totalExpenses.toFixed(2)}`;
-            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('subtotal').textContent = `$${totalDue.toFixed(2)}`;
         }
 
         // Restore UI state on load
