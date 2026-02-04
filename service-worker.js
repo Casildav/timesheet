@@ -1,9 +1,10 @@
-const CACHE_NAME = 'timesheet-v1';
+const CACHE_NAME = 'timesheet-v2';
 const ASSETS = [
-  '/timesheet.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  './',
+  './timesheet.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Install - cache assets
@@ -45,7 +46,7 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => {
       // Offline fallback for navigation
       if (event.request.mode === 'navigate') {
-        return caches.match('/timesheet.html');
+        return caches.match('./timesheet.html');
       }
     })
   );
