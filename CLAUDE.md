@@ -10,14 +10,17 @@ SENIOR SOFTWARE ENGINEER
 The Total Due calculation MUST always be:
 
 ```
-Total Due = Gross Earnings + Reimbursable Expenses
+Total Due = Gross Earnings + Reimbursable Expenses - Non-Reimbursable Expenses
 ```
 
 Where:
 - Gross Earnings = Total Hours × Hourly Rate
-- Reimbursable Expenses = Sum of all expense entries in the period
+- Reimbursable Expenses = Sum of expenses with type "reimburse" (ADDED to earnings)
+- Non-Reimbursable Expenses = Sum of expenses with type "deduct" (SUBTRACTED from earnings)
 
-**CRITICAL**: Expenses are ADDED (as reimbursements the user is owed), NOT subtracted.
+**CRITICAL**:
+- Reimbursable expenses are ADDED (out-of-pocket costs the user is owed)
+- Non-reimbursable expenses are SUBTRACTED (deductions from earnings)
 
 If any feature request appears to contradict this logic:
 1. STOP and clarify with the user
@@ -26,8 +29,9 @@ If any feature request appears to contradict this logic:
 
 This rule exists because the timesheet tracks:
 - Time worked (which earns money)
-- Expenses paid out-of-pocket (which need reimbursement)
-- Total amount the user is owed = earnings + reimbursements
+- Reimbursable expenses paid out-of-pocket (which need reimbursement)
+- Non-reimbursable expenses (which reduce earnings)
+- Total amount the user is owed = earnings + reimbursements - deductions
 </business_rules>
 
 <system_prompt>

@@ -180,7 +180,8 @@
         input[type="text"],
         input[type="date"],
         input[type="time"],
-        input[type="datetime-local"] {
+        input[type="datetime-local"],
+        select {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
@@ -190,7 +191,18 @@
             transition: border-color 0.3s;
         }
 
-        input:focus {
+        select {
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #e4e4e4;
+        }
+
+        input:focus,
+        select:focus {
             outline: none;
             border-color: #00d9ff;
         }
@@ -319,6 +331,108 @@
         }
 
         .summary-item .value.subtotal {
+            color: #ffd93d;
+        }
+
+        .summary-item .value.reimbursable {
+            color: #00ff88;
+        }
+
+        .summary-item .value.deductions {
+            color: #ff6b6b;
+        }
+
+        /* Expense type styling */
+        .expense-reimburse {
+            color: #00ff88;
+        }
+
+        .expense-deduct {
+            color: #ff6b6b;
+        }
+
+        /* Header with language selector */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .app-header h1 {
+            margin-bottom: 0;
+        }
+
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Google Translate widget styling */
+        .goog-te-gadget {
+            font-family: inherit !important;
+        }
+
+        .goog-te-gadget-simple {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+        }
+
+        .goog-te-gadget-simple .goog-te-menu-value {
+            color: #e4e4e4 !important;
+        }
+
+        .goog-te-gadget-simple .goog-te-menu-value span {
+            color: #e4e4e4 !important;
+        }
+
+        /* Daily subtotals section */
+        .daily-subtotals {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .daily-subtotals h3 {
+            color: #00d9ff;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .daily-subtotals-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .daily-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .daily-item .daily-date {
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        .daily-item .daily-breakdown {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .daily-item .daily-total {
+            font-weight: 600;
             color: #ffd93d;
         }
 
@@ -474,7 +588,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>⏱️ Timesheet</h1>
+        <div class="app-header">
+            <h1>⏱️ Timesheet</h1>
+            <div class="language-selector">
+                <div id="google_translate_element"></div>
+            </div>
+        </div>
 
         <!-- Clock In/Out Section -->
         <div class="card clock-section">
@@ -537,6 +656,13 @@
                     <input type="text" id="expenseDesc" placeholder="Description">
                 </div>
                 <div class="form-group">
+                    <label for="expenseType">Type</label>
+                    <select id="expenseType">
+                        <option value="reimburse">Reimburse</option>
+                        <option value="deduct">Deduct</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="expenseAmount">Amount</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01">
                 </div>
@@ -566,13 +692,23 @@
                     <div class="value earnings" id="grossEarnings">$0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">Reimbursable Expenses</div>
-                    <div class="value expenses" id="totalExpenses">$0.00</div>
+                    <div class="label">+ Reimbursable</div>
+                    <div class="value reimbursable" id="totalReimbursable">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">- Deductions</div>
+                    <div class="value deductions" id="totalDeductions">$0.00</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Total Due</div>
                     <div class="value subtotal" id="subtotal">$0.00</div>
                 </div>
+            </div>
+
+            <!-- Daily Subtotals -->
+            <div class="daily-subtotals">
+                <h3>Daily Breakdown</h3>
+                <div class="daily-subtotals-list" id="dailySubtotals"></div>
             </div>
         </div>
     </div>
@@ -618,6 +754,13 @@
                     <input type="text" id="editExpenseDesc">
                 </div>
                 <div class="form-group">
+                    <label for="editExpenseType">Type</label>
+                    <select id="editExpenseType">
+                        <option value="reimburse">Reimburse</option>
+                        <option value="deduct">Deduct</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="editExpenseAmount">Amount</label>
                     <input type="number" id="editExpenseAmount" min="0" step="0.01">
                 </div>
@@ -655,6 +798,12 @@
                 const parsed = JSON.parse(saved);
                 state = { ...state, ...parsed };
                 document.getElementById('hourlyRate').value = state.hourlyRate;
+                
+                // Migrate existing expenses to have type field (default to reimburse)
+                state.expenses = state.expenses.map(expense => ({
+                    ...expense,
+                    type: expense.type || 'reimburse'
+                }));
             }
             
             // Set default date filter to this month
@@ -897,6 +1046,7 @@
         function addExpense() {
             const date = document.getElementById('expenseDate').value;
             const desc = document.getElementById('expenseDesc').value.trim();
+            const type = document.getElementById('expenseType').value;
             const amount = parseFloat(document.getElementById('expenseAmount').value);
 
             if (!date || !desc || isNaN(amount) || amount <= 0) {
@@ -908,12 +1058,14 @@
                 id: Date.now(),
                 date: date,
                 description: desc,
+                type: type,
                 amount: amount
             });
 
             // Clear form
             document.getElementById('expenseDesc').value = '';
             document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseType').value = 'reimburse';
 
             saveState();
             renderExpenses();
@@ -928,6 +1080,7 @@
             document.getElementById('editExpenseId').value = id;
             document.getElementById('editExpenseDate').value = expense.date;
             document.getElementById('editExpenseDesc').value = expense.description;
+            document.getElementById('editExpenseType').value = expense.type || 'reimburse';
             document.getElementById('editExpenseAmount').value = expense.amount;
 
             document.getElementById('editExpenseModal').classList.add('active');
@@ -943,6 +1096,7 @@
             const id = parseInt(document.getElementById('editExpenseId').value);
             const date = document.getElementById('editExpenseDate').value;
             const desc = document.getElementById('editExpenseDesc').value.trim();
+            const type = document.getElementById('editExpenseType').value;
             const amount = parseFloat(document.getElementById('editExpenseAmount').value);
 
             if (!date || !desc || isNaN(amount) || amount <= 0) {
@@ -956,6 +1110,7 @@
                     id: id,
                     date: date,
                     description: desc,
+                    type: type,
                     amount: amount
                 };
             }
@@ -984,6 +1139,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Description</th>
+                            <th>Type</th>
                             <th>Amount</th>
                             <th></th>
                         </tr>
@@ -992,11 +1148,17 @@
             `;
 
             sorted.forEach(expense => {
+                const type = expense.type || 'reimburse';
+                const typeLabel = type === 'reimburse' ? 'Reimburse' : 'Deduct';
+                const typeClass = type === 'reimburse' ? 'expense-reimburse' : 'expense-deduct';
+                const amountPrefix = type === 'deduct' ? '-' : '+';
+                
                 html += `
                     <tr>
                         <td>${new Date(expense.date).toLocaleDateString()}</td>
                         <td>${expense.description}</td>
-                        <td>$${expense.amount.toFixed(2)}</td>
+                        <td class="${typeClass}">${typeLabel}</td>
+                        <td class="${typeClass}">${amountPrefix}$${expense.amount.toFixed(2)}</td>
                         <td class="actions-cell">
                             <button class="btn-icon edit" onclick="openEditExpenseModal(${expense.id})" title="Edit">✎</button>
                             <button class="btn-icon delete" onclick="deleteExpense(${expense.id})" title="Delete">✕</button>
@@ -1064,33 +1226,101 @@
             // Calculate gross earnings
             const grossEarnings = totalHours * state.hourlyRate;
 
-            // Calculate total expenses in period
+            // Calculate expenses by type in period
             const filteredExpenses = state.expenses.filter(expense => {
                 const expenseDate = new Date(expense.date);
                 return expenseDate >= from && expenseDate <= to;
             });
-            const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            
+            const reimbursableExpenses = filteredExpenses
+                .filter(e => (e.type || 'reimburse') === 'reimburse')
+                .reduce((sum, e) => sum + e.amount, 0);
+            
+            const deductibleExpenses = filteredExpenses
+                .filter(e => e.type === 'deduct')
+                .reduce((sum, e) => sum + e.amount, 0);
 
             /*
              * =========================================================
              * PROTECTED BUSINESS LOGIC - DO NOT MODIFY WITHOUT APPROVAL
              * =========================================================
-             * Formula: Total Due = Gross Earnings + Reimbursable Expenses
+             * Formula: Total Due = Gross Earnings + Reimbursable - Deductions
              * 
-             * Expenses are ADDED because they represent out-of-pocket
-             * costs the user paid and needs to be reimbursed for.
+             * - Reimbursable expenses are ADDED (out-of-pocket costs to reimburse)
+             * - Non-reimbursable expenses are SUBTRACTED (deductions from earnings)
              * 
-             * DO NOT change this to subtraction.
              * See CLAUDE.md business_rules section for full context.
              * =========================================================
              */
-            const totalDue = grossEarnings + totalExpenses;
+            const totalDue = grossEarnings + reimbursableExpenses - deductibleExpenses;
 
             // Update display
             document.getElementById('totalHours').textContent = totalHours.toFixed(2);
             document.getElementById('grossEarnings').textContent = `$${grossEarnings.toFixed(2)}`;
-            document.getElementById('totalExpenses').textContent = `$${totalExpenses.toFixed(2)}`;
+            document.getElementById('totalReimbursable').textContent = `$${reimbursableExpenses.toFixed(2)}`;
+            document.getElementById('totalDeductions').textContent = `$${deductibleExpenses.toFixed(2)}`;
             document.getElementById('subtotal').textContent = `$${totalDue.toFixed(2)}`;
+
+            // Calculate and render daily subtotals
+            renderDailySubtotals(filteredEntries, filteredExpenses, from, to);
+        }
+
+        // Render daily subtotals
+        function renderDailySubtotals(entries, expenses, from, to) {
+            const container = document.getElementById('dailySubtotals');
+            
+            // Get all unique dates from entries and expenses
+            const allDates = new Set();
+            entries.forEach(e => allDates.add(e.date));
+            expenses.forEach(e => allDates.add(e.date));
+            
+            if (allDates.size === 0) {
+                container.innerHTML = '<div class="empty-state">No data for selected period.</div>';
+                return;
+            }
+
+            // Sort dates descending
+            const sortedDates = [...allDates].sort((a, b) => new Date(b) - new Date(a));
+
+            let html = '';
+            sortedDates.forEach(date => {
+                // Calculate daily hours
+                const dayEntries = entries.filter(e => e.date === date);
+                const dayHours = dayEntries.reduce((sum, e) => sum + e.hours, 0);
+                const dayEarnings = dayHours * state.hourlyRate;
+
+                // Calculate daily expenses by type
+                const dayExpenses = expenses.filter(e => e.date === date);
+                const dayReimbursable = dayExpenses
+                    .filter(e => (e.type || 'reimburse') === 'reimburse')
+                    .reduce((sum, e) => sum + e.amount, 0);
+                const dayDeductions = dayExpenses
+                    .filter(e => e.type === 'deduct')
+                    .reduce((sum, e) => sum + e.amount, 0);
+
+                // Daily total
+                const dayTotal = dayEarnings + dayReimbursable - dayDeductions;
+
+                const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                html += `
+                    <div class="daily-item">
+                        <span class="daily-date">${formattedDate}</span>
+                        <span class="daily-breakdown">
+                            <span>${dayHours.toFixed(1)}h</span>
+                            <span class="expense-reimburse">+$${dayReimbursable.toFixed(2)}</span>
+                            <span class="expense-deduct">-$${dayDeductions.toFixed(2)}</span>
+                        </span>
+                        <span class="daily-total">$${dayTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
         // Restore UI state on load
@@ -1176,5 +1406,18 @@
 
         init();
     </script>
+
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,es-419',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
