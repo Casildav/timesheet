@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#00d9ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Timesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Timesheet App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: #00d9ff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #00d9ff;
+            margin-bottom: 16px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clock-section {
+            text-align: center;
+        }
+
+        .current-time {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .current-date {
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status.clocked-in {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+
+        .status.clocked-out {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e4e4;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .btn-icon {
+            padding: 6px 10px;
+            font-size: 0.9rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-radius: 4px;
+        }
+
+        .btn-icon.edit {
+            color: #00d9ff;
+        }
+
+        .btn-icon.edit:hover {
+            background: rgba(0, 217, 255, 0.2);
+        }
+
+        .btn-icon.delete {
+            color: #ff6b6b;
+        }
+
+        .btn-icon.delete:hover {
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .settings-row label {
+            color: #888;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        input[type="datetime-local"] {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #e4e4e4;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        input[type="number"] {
+            width: 100px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .form-group input {
+            min-width: 140px;
+        }
+
+        .expense-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: flex-end;
+        }
+
+        .expense-form input[type="text"] {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .expense-form input[type="number"] {
+            width: 120px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            color: #00d9ff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            color: #ccc;
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+        }
+
+        .date-filter {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-item .label {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .summary-item .value {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .summary-item .value.hours {
+            color: #00d9ff;
+        }
+
+        .summary-item .value.earnings {
+            color: #00ff88;
+        }
+
+        .summary-item .value.expenses {
+            color: #ff6b6b;
+        }
+
+        .summary-item .value.subtotal {
+            color: #ffd93d;
+        }
+
+        .elapsed-time {
+            font-size: 1.5rem;
+            color: #00ff88;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .manual-entry-section {
+            background: rgba(0, 217, 255, 0.08);
+            border: 1px dashed rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-subtitle {
+            color: #ccc;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .entries-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal h3 {
+            color: #00d9ff;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-form .form-group {
+            width: 100%;
+        }
+
+        .modal-form .form-group input {
+            width: 100%;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Install banner */
+        .install-banner {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+            color: #1a1a2e;
+            padding: 16px 20px;
+            border-radius: 12px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            z-index: 999;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .install-banner.show {
+            display: flex;
+        }
+
+        .install-banner p {
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .install-banner button {
+            flex-shrink: 0;
+        }
+
+        .install-banner .dismiss {
+            background: transparent;
+            border: none;
+            color: #1a1a2e;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .current-time {
+                font-size: 2rem;
+            }
+            
+            .summary-item .value {
+                font-size: 1.4rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+
+            .form-group input {
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏱️ Timesheet</h1>
+
+        <!-- Clock In/Out Section -->
+        <div class="card clock-section">
+            <div class="current-time" id="currentTime">00:00:00</div>
+            <div class="current-date" id="currentDate"></div>
+            <div class="status clocked-out" id="status">Clocked Out</div>
+            <div id="elapsedTime" class="elapsed-time" style="display: none;">Elapsed: 00:00:00</div>
+            <br><br>
+            <button class="btn btn-primary" id="clockBtn" onclick="toggleClock()">Clock In</button>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="card">
+            <h2>⚙️ Settings</h2>
+            <div class="settings-row">
+                <label for="hourlyRate">Hourly Rate: $</label>
+                <input type="number" id="hourlyRate" value="25" min="0" step="0.01" onchange="saveSettings()">
+            </div>
+        </div>
+
+        <!-- Time Entries Section -->
+        <div class="card">
+            <h2>📋 Time Entries</h2>
+            
+            <!-- Manual Entry Form -->
+            <div class="manual-entry-section">
+                <h3 class="section-subtitle">➕ Add Manual Entry</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="manualDate">Date</label>
+                        <input type="date" id="manualDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="manualClockIn">Clock In</label>
+                        <input type="time" id="manualClockIn">
+                    </div>
+                    <div class="form-group">
+                        <label for="manualClockOut">Clock Out</label>
+                        <input type="time" id="manualClockOut">
+                    </div>
+                    <button class="btn btn-primary btn-small" onclick="addManualEntry()">Add Entry</button>
+                </div>
+            </div>
+            
+            <div class="entries-divider"></div>
+            <h3 class="section-subtitle">📜 Entry History</h3>
+            <div id="timeEntriesTable"></div>
+        </div>
+
+        <!-- Expenses Section -->
+        <div class="card">
+            <h2>💸 Expenses</h2>
+            <div class="expense-form">
+                <div class="form-group">
+                    <label for="expenseDate">Date</label>
+                    <input type="date" id="expenseDate">
+                </div>
+                <div class="form-group">
+                    <label for="expenseDesc">Description</label>
+                    <input type="text" id="expenseDesc" placeholder="Description">
+                </div>
+                <div class="form-group">
+                    <label for="expenseAmount">Amount</label>
+                    <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <button class="btn btn-primary btn-small" onclick="addExpense()">Add</button>
+            </div>
+            <div id="expensesTable"></div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="card">
+            <h2>📊 Summary</h2>
+            <div class="date-filter">
+                <label>From:</label>
+                <input type="date" id="filterFrom" onchange="updateSummary()">
+                <label>To:</label>
+                <input type="date" id="filterTo" onchange="updateSummary()">
+                <button class="btn btn-primary btn-small" onclick="setThisWeek()">This Week</button>
+                <button class="btn btn-primary btn-small" onclick="setThisMonth()">This Month</button>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="label">Total Hours</div>
+                    <div class="value hours" id="totalHours">0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Gross Earnings</div>
+                    <div class="value earnings" id="grossEarnings">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Total Expenses</div>
+                    <div class="value expenses" id="totalExpenses">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Subtotal</div>
+                    <div class="value subtotal" id="subtotal">$0.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Time Entry Modal -->
+    <div class="modal-overlay" id="editTimeModal">
+        <div class="modal">
+            <h3>Edit Time Entry</h3>
+            <div class="modal-form">
+                <input type="hidden" id="editTimeId">
+                <div class="form-group">
+                    <label for="editTimeDate">Date</label>
+                    <input type="date" id="editTimeDate">
+                </div>
+                <div class="form-group">
+                    <label for="editTimeClockIn">Clock In</label>
+                    <input type="time" id="editTimeClockIn">
+                </div>
+                <div class="form-group">
+                    <label for="editTimeClockOut">Clock Out</label>
+                    <input type="time" id="editTimeClockOut">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary btn-small" onclick="closeEditTimeModal()">Cancel</button>
+                <button class="btn btn-primary btn-small" onclick="saveTimeEntry()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Expense Modal -->
+    <div class="modal-overlay" id="editExpenseModal">
+        <div class="modal">
+            <h3>Edit Expense</h3>
+            <div class="modal-form">
+                <input type="hidden" id="editExpenseId">
+                <div class="form-group">
+                    <label for="editExpenseDate">Date</label>
+                    <input type="date" id="editExpenseDate">
+                </div>
+                <div class="form-group">
+                    <label for="editExpenseDesc">Description</label>
+                    <input type="text" id="editExpenseDesc">
+                </div>
+                <div class="form-group">
+                    <label for="editExpenseAmount">Amount</label>
+                    <input type="number" id="editExpenseAmount" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary btn-small" onclick="closeEditExpenseModal()">Cancel</button>
+                <button class="btn btn-primary btn-small" onclick="saveExpense()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <p>📲 Install Timesheet for quick access</p>
+        <button class="btn btn-small" onclick="installApp()">Install</button>
+        <button class="dismiss" onclick="dismissInstall()">×</button>
+    </div>
+
+    <script>
+        // Data storage
+        let state = {
+            isClockedIn: false,
+            clockInTime: null,
+            timeEntries: [],
+            expenses: [],
+            hourlyRate: 25
+        };
+
+        let deferredPrompt = null;
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('timesheetState');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+                document.getElementById('hourlyRate').value = state.hourlyRate;
+            }
+            
+            // Set default date filter to this month
+            setThisMonth();
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('timesheetState', JSON.stringify(state));
+        }
+
+        // Save settings
+        function saveSettings() {
+            state.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+            saveState();
+            updateSummary();
+        }
+
+        // Update clock display
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Update elapsed time if clocked in
+            if (state.isClockedIn && state.clockInTime) {
+                const elapsed = Math.floor((now - new Date(state.clockInTime)) / 1000);
+                const hours = Math.floor(elapsed / 3600);
+                const minutes = Math.floor((elapsed % 3600) / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('elapsedTime').textContent = 
+                    `Elapsed: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+
+        // Toggle clock in/out
+        function toggleClock() {
+            const now = new Date();
+            const statusEl = document.getElementById('status');
+            const btnEl = document.getElementById('clockBtn');
+            const elapsedEl = document.getElementById('elapsedTime');
+
+            if (!state.isClockedIn) {
+                // Clock In
+                state.isClockedIn = true;
+                state.clockInTime = now.toISOString();
+                statusEl.textContent = 'Clocked In';
+                statusEl.className = 'status clocked-in';
+                btnEl.textContent = 'Clock Out';
+                btnEl.className = 'btn btn-danger';
+                elapsedEl.style.display = 'block';
+            } else {
+                // Clock Out
+                state.isClockedIn = false;
+                const clockIn = new Date(state.clockInTime);
+                const hours = (now - clockIn) / (1000 * 60 * 60);
+                
+                state.timeEntries.push({
+                    id: Date.now(),
+                    date: clockIn.toISOString().split('T')[0],
+                    clockIn: state.clockInTime,
+                    clockOut: now.toISOString(),
+                    hours: hours
+                });
+
+                state.clockInTime = null;
+                statusEl.textContent = 'Clocked Out';
+                statusEl.className = 'status clocked-out';
+                btnEl.textContent = 'Clock In';
+                btnEl.className = 'btn btn-primary';
+                elapsedEl.style.display = 'none';
+                
+                renderTimeEntries();
+                updateSummary();
+            }
+
+            saveState();
+        }
+
+        // Add manual time entry
+        function addManualEntry() {
+            const date = document.getElementById('manualDate').value;
+            const clockInTime = document.getElementById('manualClockIn').value;
+            const clockOutTime = document.getElementById('manualClockOut').value;
+
+            if (!date || !clockInTime || !clockOutTime) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const clockIn = new Date(`${date}T${clockInTime}`);
+            const clockOut = new Date(`${date}T${clockOutTime}`);
+
+            if (clockOut <= clockIn) {
+                alert('Clock out time must be after clock in time');
+                return;
+            }
+
+            const hours = (clockOut - clockIn) / (1000 * 60 * 60);
+
+            state.timeEntries.push({
+                id: Date.now(),
+                date: date,
+                clockIn: clockIn.toISOString(),
+                clockOut: clockOut.toISOString(),
+                hours: hours
+            });
+
+            // Clear form
+            document.getElementById('manualClockIn').value = '';
+            document.getElementById('manualClockOut').value = '';
+
+            saveState();
+            renderTimeEntries();
+            updateSummary();
+        }
+
+        // Open edit time modal
+        function openEditTimeModal(id) {
+            const entry = state.timeEntries.find(e => e.id === id);
+            if (!entry) return;
+
+            const clockIn = new Date(entry.clockIn);
+            const clockOut = new Date(entry.clockOut);
+
+            document.getElementById('editTimeId').value = id;
+            document.getElementById('editTimeDate').value = entry.date;
+            document.getElementById('editTimeClockIn').value = clockIn.toTimeString().slice(0, 5);
+            document.getElementById('editTimeClockOut').value = clockOut.toTimeString().slice(0, 5);
+
+            document.getElementById('editTimeModal').classList.add('active');
+        }
+
+        // Close edit time modal
+        function closeEditTimeModal() {
+            document.getElementById('editTimeModal').classList.remove('active');
+        }
+
+        // Save edited time entry
+        function saveTimeEntry() {
+            const id = parseInt(document.getElementById('editTimeId').value);
+            const date = document.getElementById('editTimeDate').value;
+            const clockInTime = document.getElementById('editTimeClockIn').value;
+            const clockOutTime = document.getElementById('editTimeClockOut').value;
+
+            if (!date || !clockInTime || !clockOutTime) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const clockIn = new Date(`${date}T${clockInTime}`);
+            const clockOut = new Date(`${date}T${clockOutTime}`);
+
+            if (clockOut <= clockIn) {
+                alert('Clock out time must be after clock in time');
+                return;
+            }
+
+            const hours = (clockOut - clockIn) / (1000 * 60 * 60);
+
+            const index = state.timeEntries.findIndex(e => e.id === id);
+            if (index !== -1) {
+                state.timeEntries[index] = {
+                    id: id,
+                    date: date,
+                    clockIn: clockIn.toISOString(),
+                    clockOut: clockOut.toISOString(),
+                    hours: hours
+                };
+            }
+
+            saveState();
+            renderTimeEntries();
+            updateSummary();
+            closeEditTimeModal();
+        }
+
+        // Render time entries table
+        function renderTimeEntries() {
+            const container = document.getElementById('timeEntriesTable');
+            
+            if (state.timeEntries.length === 0) {
+                container.innerHTML = '<div class="empty-state">No time entries yet. Clock in or add a manual entry!</div>';
+                return;
+            }
+
+            // Sort by date descending
+            const sorted = [...state.timeEntries].sort((a, b) => new Date(b.clockIn) - new Date(a.clockIn));
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Hours</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sorted.forEach(entry => {
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = new Date(entry.clockOut);
+                html += `
+                    <tr>
+                        <td>${clockIn.toLocaleDateString()}</td>
+                        <td>${clockIn.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td>${clockOut.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td>${entry.hours.toFixed(2)}</td>
+                        <td class="actions-cell">
+                            <button class="btn-icon edit" onclick="openEditTimeModal(${entry.id})" title="Edit">✎</button>
+                            <button class="btn-icon delete" onclick="deleteTimeEntry(${entry.id})" title="Delete">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Delete time entry
+        function deleteTimeEntry(id) {
+            if (!confirm('Delete this time entry?')) return;
+            state.timeEntries = state.timeEntries.filter(e => e.id !== id);
+            saveState();
+            renderTimeEntries();
+            updateSummary();
+        }
+
+        // Add expense
+        function addExpense() {
+            const date = document.getElementById('expenseDate').value;
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+
+            if (!date || !desc || isNaN(amount) || amount <= 0) {
+                alert('Please fill in all expense fields');
+                return;
+            }
+
+            state.expenses.push({
+                id: Date.now(),
+                date: date,
+                description: desc,
+                amount: amount
+            });
+
+            // Clear form
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+
+            saveState();
+            renderExpenses();
+            updateSummary();
+        }
+
+        // Open edit expense modal
+        function openEditExpenseModal(id) {
+            const expense = state.expenses.find(e => e.id === id);
+            if (!expense) return;
+
+            document.getElementById('editExpenseId').value = id;
+            document.getElementById('editExpenseDate').value = expense.date;
+            document.getElementById('editExpenseDesc').value = expense.description;
+            document.getElementById('editExpenseAmount').value = expense.amount;
+
+            document.getElementById('editExpenseModal').classList.add('active');
+        }
+
+        // Close edit expense modal
+        function closeEditExpenseModal() {
+            document.getElementById('editExpenseModal').classList.remove('active');
+        }
+
+        // Save edited expense
+        function saveExpense() {
+            const id = parseInt(document.getElementById('editExpenseId').value);
+            const date = document.getElementById('editExpenseDate').value;
+            const desc = document.getElementById('editExpenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('editExpenseAmount').value);
+
+            if (!date || !desc || isNaN(amount) || amount <= 0) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const index = state.expenses.findIndex(e => e.id === id);
+            if (index !== -1) {
+                state.expenses[index] = {
+                    id: id,
+                    date: date,
+                    description: desc,
+                    amount: amount
+                };
+            }
+
+            saveState();
+            renderExpenses();
+            updateSummary();
+            closeEditExpenseModal();
+        }
+
+        // Render expenses table
+        function renderExpenses() {
+            const container = document.getElementById('expensesTable');
+            
+            if (state.expenses.length === 0) {
+                container.innerHTML = '<div class="empty-state">No expenses recorded yet.</div>';
+                return;
+            }
+
+            // Sort by date descending
+            const sorted = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sorted.forEach(expense => {
+                html += `
+                    <tr>
+                        <td>${new Date(expense.date).toLocaleDateString()}</td>
+                        <td>${expense.description}</td>
+                        <td>$${expense.amount.toFixed(2)}</td>
+                        <td class="actions-cell">
+                            <button class="btn-icon edit" onclick="openEditExpenseModal(${expense.id})" title="Edit">✎</button>
+                            <button class="btn-icon delete" onclick="deleteExpense(${expense.id})" title="Delete">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Delete expense
+        function deleteExpense(id) {
+            if (!confirm('Delete this expense?')) return;
+            state.expenses = state.expenses.filter(e => e.id !== id);
+            saveState();
+            renderExpenses();
+            updateSummary();
+        }
+
+        // Set filter to this week
+        function setThisWeek() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - dayOfWeek);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            document.getElementById('filterFrom').value = startOfWeek.toISOString().split('T')[0];
+            document.getElementById('filterTo').value = endOfWeek.toISOString().split('T')[0];
+            updateSummary();
+        }
+
+        // Set filter to this month
+        function setThisMonth() {
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            document.getElementById('filterFrom').value = startOfMonth.toISOString().split('T')[0];
+            document.getElementById('filterTo').value = endOfMonth.toISOString().split('T')[0];
+            updateSummary();
+        }
+
+        // Update summary
+        function updateSummary() {
+            const fromDate = document.getElementById('filterFrom').value;
+            const toDate = document.getElementById('filterTo').value;
+
+            if (!fromDate || !toDate) return;
+
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            to.setHours(23, 59, 59, 999); // Include entire end day
+
+            // Calculate total hours in period
+            const filteredEntries = state.timeEntries.filter(entry => {
+                const entryDate = new Date(entry.date);
+                return entryDate >= from && entryDate <= to;
+            });
+            const totalHours = filteredEntries.reduce((sum, entry) => sum + entry.hours, 0);
+
+            // Calculate gross earnings
+            const grossEarnings = totalHours * state.hourlyRate;
+
+            // Calculate total expenses in period
+            const filteredExpenses = state.expenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate >= from && expenseDate <= to;
+            });
+            const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+            // Calculate subtotal
+            const subtotal = grossEarnings - totalExpenses;
+
+            // Update display
+            document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+            document.getElementById('grossEarnings').textContent = `$${grossEarnings.toFixed(2)}`;
+            document.getElementById('totalExpenses').textContent = `$${totalExpenses.toFixed(2)}`;
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+        }
+
+        // Restore UI state on load
+        function restoreUIState() {
+            if (state.isClockedIn) {
+                const statusEl = document.getElementById('status');
+                const btnEl = document.getElementById('clockBtn');
+                const elapsedEl = document.getElementById('elapsedTime');
+                
+                statusEl.textContent = 'Clocked In';
+                statusEl.className = 'status clocked-in';
+                btnEl.textContent = 'Clock Out';
+                btnEl.className = 'btn btn-danger';
+                elapsedEl.style.display = 'block';
+            }
+        }
+
+        // PWA Install handling
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Show install banner after a short delay
+            setTimeout(() => {
+                if (!localStorage.getItem('installDismissed')) {
+                    document.getElementById('installBanner').classList.add('show');
+                }
+            }, 3000);
+        });
+
+        function installApp() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((result) => {
+                deferredPrompt = null;
+                document.getElementById('installBanner').classList.remove('show');
+            });
+        }
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.remove('show');
+            localStorage.setItem('installDismissed', 'true');
+        }
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then((reg) => console.log('Service worker registered'))
+                .catch((err) => console.log('Service worker registration failed:', err));
+        }
+
+        // Close modals on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeEditTimeModal();
+                closeEditExpenseModal();
+            }
+        });
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeEditTimeModal();
+                    closeEditExpenseModal();
+                }
+            });
+        });
+
+        // Initialize
+        function init() {
+            loadState();
+            restoreUIState();
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderTimeEntries();
+            renderExpenses();
+            
+            // Set default dates to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('manualDate').value = today;
+            document.getElementById('expenseDate').value = today;
+        }
+
+        init();
+    </script>
+</body>
+</html>
