@@ -601,7 +601,7 @@
 
         <!-- Clock In/Out Section -->
         <div class="card clock-section">
-            <div class="current-time notranslate" id="currentTime">00:00:00</div>
+            <div class="current-time" id="currentTime">00:00:00</div>
             <div class="current-date" id="currentDate"></div>
             <div class="status clocked-out" id="status" data-i18n="clockedOut">Clocked Out</div>
             <div id="elapsedTime" class="elapsed-time" style="display: none;"><span data-i18n="elapsed">Elapsed</span>: <span id="elapsedValue">00:00:00</span></div>
@@ -689,23 +689,23 @@
             <div class="summary-grid">
                 <div class="summary-item">
                     <div class="label" data-i18n="totalHours">Total Hours</div>
-                    <div class="value hours notranslate" id="totalHours">0.00</div>
+                    <div class="value hours" id="totalHours">0.00</div>
                 </div>
                 <div class="summary-item">
                     <div class="label" data-i18n="grossEarnings">Gross Earnings</div>
-                    <div class="value earnings notranslate" id="grossEarnings">$0.00</div>
+                    <div class="value earnings" id="grossEarnings">$0.00</div>
                 </div>
                 <div class="summary-item">
                     <div class="label" data-i18n="reimbursable">+ Reimbursable</div>
-                    <div class="value reimbursable notranslate" id="totalReimbursable">$0.00</div>
+                    <div class="value reimbursable" id="totalReimbursable">$0.00</div>
                 </div>
                 <div class="summary-item">
                     <div class="label" data-i18n="deductions">- Deductions</div>
-                    <div class="value deductions notranslate" id="totalDeductions">$0.00</div>
+                    <div class="value deductions" id="totalDeductions">$0.00</div>
                 </div>
                 <div class="summary-item">
                     <div class="label" data-i18n="totalDue">Total Due</div>
-                    <div class="value subtotal notranslate" id="subtotal">$0.00</div>
+                    <div class="value subtotal" id="subtotal">$0.00</div>
                 </div>
             </div>
 
@@ -787,12 +787,6 @@
         // ============================================================
         // i18n System
         // ============================================================
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
 
         let currentLang = localStorage.getItem('timesheetLang') || 'en';
 
@@ -1002,7 +996,7 @@
         // Update clock display
         function updateClock() {
             const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString(getLocale());
             document.getElementById('currentDate').textContent = now.toLocaleDateString(getLocale(), {
                 weekday: 'long',
                 year: 'numeric',
@@ -1659,11 +1653,8 @@
         // Initialize
         function init() {
             loadState();
-            restoreUIState();
             updateClock();
             setInterval(updateClock, 1000);
-            renderTimeEntries();
-            renderExpenses();
             applyTranslations();
 
             // Set default dates to today
