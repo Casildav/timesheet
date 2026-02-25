@@ -432,3 +432,234 @@ test.describe('Settings', () => {
     await expect(page.locator('#grossEarnings')).toHaveText('$800.00');
   });
 });
+
+test.describe('i18n - Language Toggle', () => {
+  test('should default to English', async ({ page }) => {
+    await expect(page.locator('.lang-btn[data-lang="en"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-i18n="settings"]')).toContainText('Settings');
+    await expect(page.locator('[data-i18n="timeEntries"]')).toContainText('Time Entries');
+    await expect(page.locator('[data-i18n="expenses"]')).toContainText('Expenses');
+    await expect(page.locator('[data-i18n="summary"]')).toContainText('Summary');
+  });
+
+  test('should switch to Spanish when ES clicked', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    await expect(page.locator('.lang-btn[data-lang="es"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-i18n="settings"]')).toContainText('Configuración');
+    await expect(page.locator('[data-i18n="timeEntries"]')).toContainText('Registro de Horas');
+    await expect(page.locator('[data-i18n="expenses"]')).toContainText('Gastos');
+    await expect(page.locator('[data-i18n="summary"]')).toContainText('Resumen');
+  });
+
+  test('should translate buttons to Spanish', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    await expect(page.locator('#clockBtn')).toContainText('Registrar Entrada');
+    await expect(page.locator('[data-i18n="addEntry"]')).toContainText('Agregar Entrada');
+    await expect(page.locator('[data-i18n="thisWeek"]')).toContainText('Esta Semana');
+    await expect(page.locator('[data-i18n="thisMonth"]')).toContainText('Este Mes');
+  });
+
+  test('should translate select options to Spanish', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    const reimburseOption = page.locator('#expenseType option[value="reimburse"]');
+    const deductOption = page.locator('#expenseType option[value="deduct"]');
+    await expect(reimburseOption).toContainText('Reembolsar');
+    await expect(deductOption).toContainText('Deducir');
+  });
+
+  test('should switch back to English', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    await expect(page.locator('[data-i18n="settings"]')).toContainText('Configuración');
+    await page.click('.lang-btn[data-lang="en"]');
+    await expect(page.locator('[data-i18n="settings"]')).toContainText('Settings');
+    await expect(page.locator('#clockBtn')).toContainText('Clock In');
+  });
+
+  test('should persist language preference across reload', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    await expect(page.locator('[data-i18n="settings"]')).toContainText('Configuración');
+    await page.reload();
+    await expect(page.locator('.lang-btn[data-lang="es"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-i18n="settings"]')).toContainText('Configuración');
+  });
+
+  test('should translate dynamic time entry table headers', async ({ page }) => {
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+
+    await page.click('.lang-btn[data-lang="es"]');
+    const headers = page.locator('#timeEntriesTable th');
+    await expect(headers.nth(0)).toContainText('Fecha');
+    await expect(headers.nth(1)).toContainText('Entrada');
+    await expect(headers.nth(2)).toContainText('Salida');
+    await expect(headers.nth(3)).toContainText('Horas');
+  });
+
+  test('should translate clock status to Spanish', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    await expect(page.locator('#status')).toHaveText('Fuera de Turno');
+    await page.click('#clockBtn');
+    await expect(page.locator('#status')).toHaveText('Trabajando');
+    await expect(page.locator('#clockBtn')).toContainText('Registrar Salida');
+  });
+});
+
+test.describe('PDF Export', () => {
+  test('should show export PDF button', async ({ page }) => {
+    await expect(page.locator('[data-i18n="exportPdf"]')).toBeVisible();
+    await expect(page.locator('[data-i18n="exportPdf"]')).toContainText('Export PDF');
+  });
+
+  test('should translate export button to Spanish', async ({ page }) => {
+    await page.click('.lang-btn[data-lang="es"]');
+    await expect(page.locator('[data-i18n="exportPdf"]')).toContainText('Exportar PDF');
+  });
+
+  test('should trigger PDF download when clicked', async ({ page }) => {
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#hourlyRate', '50');
+    await page.locator('#hourlyRate').blur();
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+
+    // Mock jsPDF since CDN may not load on file:// protocol
+    const savedFilename = await page.evaluate(() => {
+      return new Promise((resolve) => {
+        // Create a mock jsPDF that captures the save filename
+        const mockDoc = {
+          setFontSize: () => {},
+          text: () => {},
+          internal: { pageSize: { getWidth: () => 210 } },
+          autoTable: () => {},
+          lastAutoTable: { finalY: 100 },
+          save: (filename) => resolve(filename)
+        };
+        window.jspdf = { jsPDF: function() { return mockDoc; } };
+        document.querySelector('[data-i18n="exportPdf"]').click();
+      });
+    });
+
+    expect(savedFilename).toMatch(/^Timesheet_\d{4}-\d{2}-\d{2}_to_\d{4}-\d{2}-\d{2}\.pdf$/);
+  });
+});
+
+test.describe('Edge Cases', () => {
+  test('should handle zero hourly rate', async ({ page }) => {
+    await page.fill('#hourlyRate', '0');
+    await page.locator('#hourlyRate').blur();
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+    await expect(page.locator('#grossEarnings')).toHaveText('$0.00');
+    await expect(page.locator('#totalHours')).toHaveText('8.00');
+  });
+
+  test('should reject empty manual entry fields', async ({ page }) => {
+    page.on('dialog', dialog => dialog.accept());
+    await page.click('[data-i18n="addEntry"]');
+    await expect(page.locator('#timeEntriesTable .empty-state')).toBeVisible();
+  });
+
+  test('should reject empty expense fields', async ({ page }) => {
+    page.on('dialog', dialog => dialog.accept());
+    await page.click('.expense-form [data-i18n="add"]');
+    await expect(page.locator('#expensesTable .empty-state')).toBeVisible();
+  });
+
+  test('should aggregate multiple entries on same day', async ({ page }) => {
+    await page.fill('#hourlyRate', '10');
+    await page.locator('#hourlyRate').blur();
+    const today = new Date().toISOString().split('T')[0];
+
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '08:00');
+    await page.fill('#manualClockOut', '12:00');
+    await page.click('[data-i18n="addEntry"]');
+
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '13:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+
+    await expect(page.locator('#totalHours')).toHaveText('8.00');
+    await expect(page.locator('#grossEarnings')).toHaveText('$80.00');
+    await expect(page.locator('#dailySubtotals .daily-item')).toHaveCount(1);
+  });
+
+  test('should handle deleting all entries back to empty state', async ({ page }) => {
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+    await expect(page.locator('#timeEntriesTable table tbody tr')).toHaveCount(1);
+
+    page.on('dialog', dialog => dialog.accept());
+    await page.click('#timeEntriesTable .btn-icon.delete');
+    await expect(page.locator('#timeEntriesTable .empty-state')).toBeVisible();
+    await expect(page.locator('#totalHours')).toHaveText('0.00');
+  });
+
+  test('should handle large hourly rate', async ({ page }) => {
+    await page.fill('#hourlyRate', '9999');
+    await page.locator('#hourlyRate').blur();
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+    await expect(page.locator('#grossEarnings')).toHaveText('$79992.00');
+  });
+});
+
+test.describe('Mobile Viewport', () => {
+  test.use({ viewport: { width: 375, height: 667 } });
+
+  test('should show language toggle on mobile', async ({ page }) => {
+    await expect(page.locator('.lang-btn[data-lang="en"]')).toBeVisible();
+    await expect(page.locator('.lang-btn[data-lang="es"]')).toBeVisible();
+  });
+
+  test('should have tappable clock button on mobile', async ({ page }) => {
+    const clockBtn = page.locator('#clockBtn');
+    await expect(clockBtn).toBeVisible();
+    const box = await clockBtn.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test('should allow adding manual entry on mobile', async ({ page }) => {
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+    await expect(page.locator('#timeEntriesTable table tbody tr')).toHaveCount(1);
+  });
+
+  test('should show export PDF button on mobile', async ({ page }) => {
+    await expect(page.locator('[data-i18n="exportPdf"]')).toBeVisible();
+  });
+
+  test('modal should be usable on mobile', async ({ page }) => {
+    const today = new Date().toISOString().split('T')[0];
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '09:00');
+    await page.fill('#manualClockOut', '17:00');
+    await page.click('[data-i18n="addEntry"]');
+
+    await page.click('#timeEntriesTable .btn-icon.edit');
+    await expect(page.locator('#editTimeModal')).toHaveClass(/active/);
+
+    const modal = page.locator('#editTimeModal .modal');
+    await expect(modal).toBeVisible();
+    const box = await modal.boundingBox();
+    expect(box.width).toBeLessThanOrEqual(375);
+  });
+});
