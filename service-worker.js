@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timesheet-v2';
+const CACHE_NAME = 'timesheet-v3';
 const ASSETS = [
   './',
   './timesheet.html',
