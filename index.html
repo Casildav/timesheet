@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Time Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        :root {
+            --bg-deep: #0f0f13;
+            --bg-card: #1a1a1f;
+            --bg-card-hover: #222228;
+            --bg-elevated: #25252c;
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-focus: rgba(240,168,48,0.4);
+            --text-primary: #e8e6e1;
+            --text-secondary: #7a7872;
+            --text-muted: #4a4943;
+            --accent: #f0a830;
+            --accent-glow: rgba(240,168,48,0.15);
+            --success: #6bbd7b;
+            --success-glow: rgba(107,189,123,0.15);
+            --danger: #e85d5d;
+            --danger-glow: rgba(232,93,93,0.15);
+            --warning: #e8a33d;
+
+            /* Legacy aliases used by JS inline styles */
+            --primary: var(--accent);
+            --primary-dark: #c88a20;
+            --success-dark: #4a9a5a;
+            --danger-dark: #c04040;
+            --bg: var(--bg-deep);
+            --card: var(--bg-card);
+            --text: var(--text-primary);
+            --border: var(--border-subtle);
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeInBody 0.4s ease forwards;
+        }
+
+        @keyframes fadeInBody {
+            to { opacity: 1; }
+        }
+
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23fff' fill-opacity='0.5' x='0' y='0'/%3E%3Crect width='1' height='1' fill='%23fff' fill-opacity='0.3' x='2' y='1'/%3E%3Crect width='1' height='1' fill='%23fff' fill-opacity='0.4' x='1' y='3'/%3E%3Crect width='1' height='1' fill='%23fff' fill-opacity='0.2' x='3' y='2'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+        }
+
+        .container {
+            max-width: 440px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header with Clock */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .current-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 64px;
+            font-weight: 200;
+            letter-spacing: -3px;
+            color: var(--text-primary);
+        }
+
+        .current-date {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Screen visibility */
+        .screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* PIN Entry Screen */
+        .pin-display {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .pin-label {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .pin-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            background: transparent;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .pin-dot.filled {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .pin-dot.error {
+            background: var(--danger);
+            border-color: var(--danger);
+            box-shadow: 0 0 12px var(--danger-glow);
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Keypad */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .key {
+            height: 64px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 300;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.1s ease, border-color 0.1s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .key:active {
+            background: var(--bg-elevated);
+            transform: scale(0.96);
+            border-color: var(--border-focus);
+        }
+
+        .key.clear {
+            background: transparent;
+            border: 1px dashed var(--border-subtle);
+            color: var(--text-secondary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: none;
+        }
+
+        .key.backspace {
+            background: transparent;
+            border: 1px dashed var(--border-subtle);
+            font-size: 22px;
+            box-shadow: none;
+        }
+
+        /* Action Screen */
+        .employee-info {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .employee-name {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .employee-status {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .employee-status.on-clock {
+            color: var(--success);
+        }
+
+        .shift-info {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .action-buttons {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 18px 32px;
+            border: none;
+            border-radius: 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.1s ease;
+            min-height: 56px;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+            filter: brightness(1.1);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--bg-deep);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px 20px 0 0;
+            border-top: 1px solid var(--border-subtle);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(0);
+            animation: slideUpModal 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        @keyframes slideUpModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Drag handle indicator */
+        .modal::before {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--text-muted);
+            margin: 12px auto 16px;
+        }
+
+        .modal-header {
+            padding: 0 24px 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .modal-title {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-subtitle {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-footer .btn {
+            flex: 1;
+            padding: 16px;
+            font-size: 16px;
+        }
+
+        /* Meal Break Options */
+        .meal-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .meal-option {
+            padding: 18px;
+            border: 2px solid var(--border-subtle);
+            border-radius: 14px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .meal-option:active,
+        .meal-option.selected {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .meal-option-title {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .meal-option-desc {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .meal-option.warning {
+            border-color: var(--warning);
+        }
+
+        .meal-option.warning.selected {
+            background: rgba(232,163,61,0.15);
+            border-color: var(--warning);
+        }
+
+        /* Reason Input */
+        .reason-container {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .reason-container.active {
+            display: block;
+        }
+
+        .reason-label {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .reason-input {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'DM Sans', sans-serif;
+            resize: none;
+            min-height: 100px;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .reason-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .reason-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Admin Panel */
+        .admin-trigger {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            opacity: 0.05;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .admin-panel {
+            padding: 20px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .admin-title {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .employee-list {
+            margin-bottom: 24px;
+        }
+
+        .employee-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .employee-item-name {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .employee-item-pin {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-hint {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 8px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+            background: transparent;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .punch-record {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 8px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .punch-record-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .punch-record-name {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .punch-record-date {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .punch-record-times {
+            display: flex;
+            gap: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .punch-record-meal {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .punch-record-meal.no-break {
+            color: var(--danger);
+        }
+
+        .punch-record-meal.flagged {
+            color: var(--warning);
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent);
+            color: var(--bg-deep);
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Delete button */
+        .btn-delete {
+            background: transparent;
+            border: none;
+            color: var(--danger);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Confirmation dialog */
+        .confirm-delete {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .confirm-delete p {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="current-time" id="currentTime">12:00</div>
+            <div class="current-date" id="currentDate">Monday, January 1</div>
+        </div>
+
+        <!-- PIN Entry Screen -->
+        <div class="screen active" id="pinScreen">
+            <div class="pin-display">
+                <div class="pin-label">Enter your PIN</div>
+                <div class="pin-dots" id="pinDots">
+                    <div class="pin-dot"></div>
+                    <div class="pin-dot"></div>
+                    <div class="pin-dot"></div>
+                    <div class="pin-dot"></div>
+                </div>
+            </div>
+            <div class="keypad">
+                <button class="key" data-key="1">1</button>
+                <button class="key" data-key="2">2</button>
+                <button class="key" data-key="3">3</button>
+                <button class="key" data-key="4">4</button>
+                <button class="key" data-key="5">5</button>
+                <button class="key" data-key="6">6</button>
+                <button class="key" data-key="7">7</button>
+                <button class="key" data-key="8">8</button>
+                <button class="key" data-key="9">9</button>
+                <button class="key clear" data-key="clear">Clear</button>
+                <button class="key" data-key="0">0</button>
+                <button class="key backspace" data-key="back">&#x232B;</button>
+            </div>
+        </div>
+
+        <!-- Action Screen -->
+        <div class="screen" id="actionScreen">
+            <div class="employee-info">
+                <div class="employee-name" id="employeeName">Employee Name</div>
+                <div class="employee-status" id="employeeStatus">Off Clock</div>
+                <div class="shift-info" id="shiftInfo"></div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-success" id="clockInBtn">
+                    &#x2600;&#xFE0F; START SHIFT
+                </button>
+                <button class="btn btn-danger" id="clockOutBtn" style="display: none;">
+                    &#x1F319; END SHIFT
+                </button>
+                <button class="btn btn-secondary" id="cancelBtn">
+                    &#x2190; Back
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Screen -->
+        <div class="screen" id="adminScreen">
+            <div class="admin-panel">
+                <div class="admin-header">
+                    <div class="admin-title">Admin Panel</div>
+                    <button class="btn btn-secondary" id="adminBackBtn" style="padding: 12px 20px; font-size: 16px;">
+                        &#x2190; Back
+                    </button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="employees">Employees</button>
+                    <button class="tab" data-tab="records">Records</button>
+                    <button class="tab" data-tab="add">Add Employee</button>
+                </div>
+
+                <!-- Employees Tab -->
+                <div class="tab-content active" id="employeesTab">
+                    <div class="employee-list" id="employeeList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Records Tab -->
+                <div class="tab-content" id="recordsTab">
+                    <div id="punchRecords">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Add Employee Tab -->
+                <div class="tab-content" id="addTab">
+                    <form id="addEmployeeForm">
+                        <div class="form-group">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-input" id="newName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">4-Digit PIN *</label>
+                            <input type="text" class="form-input" id="newPin" maxlength="4" pattern="[0-9]{4}" required>
+                            <div class="form-hint">Must be 4 digits and unique</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SSN (Optional)</label>
+                            <input type="text" class="form-input" id="newSsn" placeholder="XXX-XX-XXXX">
+                            <div class="form-hint">Will be masked for security. Only last 4 digits visible.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            Add Employee
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meal Break Modal -->
+    <div class="modal-overlay" id="mealModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Meal Break Verification</div>
+                <div class="modal-subtitle">California Labor Law requires this attestation</div>
+            </div>
+            <div class="modal-body">
+                <div class="meal-options">
+                    <div class="meal-option" data-meal="30">
+                        <div class="meal-option-title">I took a 30 minute break</div>
+                        <div class="meal-option-desc">Standard meal period</div>
+                    </div>
+                    <div class="meal-option" data-meal="60">
+                        <div class="meal-option-title">I took a 60 minute break</div>
+                        <div class="meal-option-desc">Extended meal period</div>
+                    </div>
+                    <div class="meal-option warning" data-meal="0">
+                        <div class="meal-option-title">I did NOT take a meal break</div>
+                        <div class="meal-option-desc">&#x26A0;&#xFE0F; Requires explanation - may trigger penalty pay review</div>
+                    </div>
+                </div>
+                <div class="reason-container" id="reasonContainer">
+                    <label class="reason-label">Please explain why you couldn't take a meal break:</label>
+                    <textarea class="reason-input" id="reasonInput" placeholder="e.g., Customer emergency, short shift, personal choice..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="mealCancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="mealConfirmBtn" disabled>Confirm &amp; Clock Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin PIN Modal -->
+    <div class="modal-overlay" id="adminPinModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Admin Access</div>
+                <div class="modal-subtitle">Enter admin PIN to continue</div>
+            </div>
+            <div class="modal-body">
+                <div class="pin-display">
+                    <div class="pin-dots" id="adminPinDots">
+                        <div class="pin-dot"></div>
+                        <div class="pin-dot"></div>
+                        <div class="pin-dot"></div>
+                        <div class="pin-dot"></div>
+                    </div>
+                </div>
+                <div class="keypad" id="adminKeypad">
+                    <button class="key" data-key="1">1</button>
+                    <button class="key" data-key="2">2</button>
+                    <button class="key" data-key="3">3</button>
+                    <button class="key" data-key="4">4</button>
+                    <button class="key" data-key="5">5</button>
+                    <button class="key" data-key="6">6</button>
+                    <button class="key" data-key="7">7</button>
+                    <button class="key" data-key="8">8</button>
+                    <button class="key" data-key="9">9</button>
+                    <button class="key clear" data-key="clear">Clear</button>
+                    <button class="key" data-key="0">0</button>
+                    <button class="key backspace" data-key="back">&#x232B;</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="adminPinCancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Admin Trigger -->
+    <button class="admin-trigger" id="adminTrigger"></button>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // Replace with your own Firebase config
+        // ============================================
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import {
+            getFirestore,
+            collection,
+            doc,
+            addDoc,
+            getDoc,
+            getDocs,
+            updateDoc,
+            deleteDoc,
+            query,
+            where,
+            orderBy,
+            limit,
+            serverTimestamp,
+            Timestamp
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // ⚠️ REPLACE THIS WITH YOUR FIREBASE CONFIG ⚠️
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        let app, db;
+        let useLocalStorage = false;
+
+        try {
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                console.log("Firebase not configured - using localStorage for demo");
+                useLocalStorage = true;
+            } else {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+            }
+        } catch (error) {
+            console.log("Firebase init error - using localStorage:", error);
+            useLocalStorage = true;
+        }
+
+        // ============================================
+        // LOCAL STORAGE FALLBACK (for demo/testing)
+        // ============================================
+        const LocalDB = {
+            getEmployees() {
+                return JSON.parse(localStorage.getItem('timeclock_employees') || '[]');
+            },
+            saveEmployees(employees) {
+                localStorage.setItem('timeclock_employees', JSON.stringify(employees));
+            },
+            getPunches() {
+                return JSON.parse(localStorage.getItem('timeclock_punches') || '[]');
+            },
+            savePunches(punches) {
+                localStorage.setItem('timeclock_punches', JSON.stringify(punches));
+            },
+            init() {
+                // Add default admin if no employees exist
+                const employees = this.getEmployees();
+                if (employees.length === 0) {
+                    employees.push({
+                        id: 'demo-1',
+                        name: 'Demo Employee',
+                        pin: '1234',
+                        ssn: null,
+                        status: 'off_clock',
+                        currentPunchId: null
+                    });
+                    this.saveEmployees(employees);
+                }
+            }
+        };
+
+        if (useLocalStorage) {
+            LocalDB.init();
+        }
+
+        // ============================================
+        // APP STATE
+        // ============================================
+        const ADMIN_PIN = '0000'; // Change this in production!
+        let currentPin = '';
+        let adminPin = '';
+        let currentEmployee = null;
+        let selectedMeal = null;
+        let currentPunch = null;
+
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const screens = {
+            pin: document.getElementById('pinScreen'),
+            action: document.getElementById('actionScreen'),
+            admin: document.getElementById('adminScreen')
+        };
+
+        const elements = {
+            currentTime: document.getElementById('currentTime'),
+            currentDate: document.getElementById('currentDate'),
+            pinDots: document.getElementById('pinDots'),
+            employeeName: document.getElementById('employeeName'),
+            employeeStatus: document.getElementById('employeeStatus'),
+            shiftInfo: document.getElementById('shiftInfo'),
+            clockInBtn: document.getElementById('clockInBtn'),
+            clockOutBtn: document.getElementById('clockOutBtn'),
+            cancelBtn: document.getElementById('cancelBtn'),
+            mealModal: document.getElementById('mealModal'),
+            mealConfirmBtn: document.getElementById('mealConfirmBtn'),
+            mealCancelBtn: document.getElementById('mealCancelBtn'),
+            reasonContainer: document.getElementById('reasonContainer'),
+            reasonInput: document.getElementById('reasonInput'),
+            adminPinModal: document.getElementById('adminPinModal'),
+            adminPinDots: document.getElementById('adminPinDots'),
+            adminTrigger: document.getElementById('adminTrigger'),
+            adminBackBtn: document.getElementById('adminBackBtn'),
+            adminPinCancelBtn: document.getElementById('adminPinCancelBtn'),
+            employeeList: document.getElementById('employeeList'),
+            punchRecords: document.getElementById('punchRecords'),
+            addEmployeeForm: document.getElementById('addEmployeeForm'),
+            toast: document.getElementById('toast')
+        };
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function updateClock() {
+            const now = new Date();
+            elements.currentTime.textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).replace(' ', '');
+
+            elements.currentDate.textContent = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function showToast(message, duration = 3000) {
+            elements.toast.textContent = message;
+            elements.toast.classList.add('show');
+            setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, duration);
+        }
+
+        function formatTime(date) {
+            if (!date) return '--:--';
+            const d = date instanceof Date ? date : new Date(date);
+            return d.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function formatDate(date) {
+            if (!date) return '';
+            const d = date instanceof Date ? date : new Date(date);
+            return d.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function calculateHours(start, end) {
+            if (!start || !end) return 0;
+            const startDate = start instanceof Date ? start : new Date(start);
+            const endDate = end instanceof Date ? end : new Date(end);
+            return (endDate - startDate) / (1000 * 60 * 60);
+        }
+
+        function maskSSN(ssn) {
+            if (!ssn) return null;
+            const cleaned = ssn.replace(/\D/g, '');
+            if (cleaned.length < 4) return '***-**-****';
+            return `***-**-${cleaned.slice(-4)}`;
+        }
+
+        function updatePinDots(dotsContainer, length) {
+            const dots = dotsContainer.querySelectorAll('.pin-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('filled', i < length);
+            });
+        }
+
+        function showPinError(dotsContainer) {
+            const dots = dotsContainer.querySelectorAll('.pin-dot');
+            dots.forEach(dot => {
+                dot.classList.add('error');
+                dot.classList.add('filled');
+            });
+            setTimeout(() => {
+                dots.forEach(dot => {
+                    dot.classList.remove('error');
+                    dot.classList.remove('filled');
+                });
+            }, 500);
+        }
+
+        // ============================================
+        // DATABASE OPERATIONS
+        // ============================================
+        async function getEmployeeByPin(pin) {
+            if (useLocalStorage) {
+                const employees = LocalDB.getEmployees();
+                return employees.find(e => e.pin === pin) || null;
+            }
+
+            const q = query(collection(db, 'employees'), where('pin', '==', pin));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) return null;
+            return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+        }
+
+        async function getActivePunch(employeeId) {
+            if (useLocalStorage) {
+                const punches = LocalDB.getPunches();
+                return punches.find(p => p.employeeId === employeeId && !p.checkOutTime) || null;
+            }
+
+            const q = query(
+                collection(db, 'punches'),
+                where('employeeId', '==', employeeId),
+                where('checkOutTime', '==', null),
+                limit(1)
+            );
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) return null;
+            const data = snapshot.docs[0].data();
+            return {
+                id: snapshot.docs[0].id,
+                ...data,
+                checkInTime: data.checkInTime?.toDate?.() || new Date(data.checkInTime)
+            };
+        }
+
+        async function clockIn(employeeId) {
+            const now = new Date();
+
+            if (useLocalStorage) {
+                const punches = LocalDB.getPunches();
+                const newPunch = {
+                    id: 'punch-' + Date.now(),
+                    employeeId,
+                    checkInTime: now.toISOString(),
+                    checkOutTime: null,
+                    mealDuration: null,
+                    mealAttestation: null,
+                    noBreakReason: null,
+                    date: now.toISOString().split('T')[0]
+                };
+                punches.push(newPunch);
+                LocalDB.savePunches(punches);
+
+                const employees = LocalDB.getEmployees();
+                const empIndex = employees.findIndex(e => e.id === employeeId);
+                if (empIndex >= 0) {
+                    employees[empIndex].status = 'on_clock';
+                    employees[empIndex].currentPunchId = newPunch.id;
+                    LocalDB.saveEmployees(employees);
+                }
+                return newPunch;
+            }
+
+            const punchRef = await addDoc(collection(db, 'punches'), {
+                employeeId,
+                checkInTime: Timestamp.fromDate(now),
+                checkOutTime: null,
+                mealDuration: null,
+                mealAttestation: null,
+                noBreakReason: null,
+                date: now.toISOString().split('T')[0]
+            });
+
+            await updateDoc(doc(db, 'employees', employeeId), {
+                status: 'on_clock',
+                currentPunchId: punchRef.id
+            });
+
+            return { id: punchRef.id, checkInTime: now };
+        }
+
+        async function clockOut(punchId, employeeId, mealDuration, noBreakReason) {
+            const now = new Date();
+
+            if (useLocalStorage) {
+                const punches = LocalDB.getPunches();
+                const punchIndex = punches.findIndex(p => p.id === punchId);
+                if (punchIndex >= 0) {
+                    punches[punchIndex].checkOutTime = now.toISOString();
+                    punches[punchIndex].mealDuration = mealDuration;
+                    punches[punchIndex].mealAttestation = mealDuration > 0;
+                    punches[punchIndex].noBreakReason = noBreakReason;
+                    LocalDB.savePunches(punches);
+                }
+
+                const employees = LocalDB.getEmployees();
+                const empIndex = employees.findIndex(e => e.id === employeeId);
+                if (empIndex >= 0) {
+                    employees[empIndex].status = 'off_clock';
+                    employees[empIndex].currentPunchId = null;
+                    LocalDB.saveEmployees(employees);
+                }
+                return;
+            }
+
+            await updateDoc(doc(db, 'punches', punchId), {
+                checkOutTime: Timestamp.fromDate(now),
+                mealDuration,
+                mealAttestation: mealDuration > 0,
+                noBreakReason
+            });
+
+            await updateDoc(doc(db, 'employees', employeeId), {
+                status: 'off_clock',
+                currentPunchId: null
+            });
+        }
+
+        async function getAllEmployees() {
+            if (useLocalStorage) {
+                return LocalDB.getEmployees();
+            }
+
+            const snapshot = await getDocs(collection(db, 'employees'));
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        async function addEmployee(name, pin, ssn) {
+            if (useLocalStorage) {
+                const employees = LocalDB.getEmployees();
+
+                // Check for duplicate PIN
+                if (employees.some(e => e.pin === pin)) {
+                    throw new Error('PIN already in use');
+                }
+
+                const newEmployee = {
+                    id: 'emp-' + Date.now(),
+                    name,
+                    pin,
+                    ssn: ssn ? maskSSN(ssn) : null,
+                    status: 'off_clock',
+                    currentPunchId: null
+                };
+                employees.push(newEmployee);
+                LocalDB.saveEmployees(employees);
+                return newEmployee;
+            }
+
+            // Check for duplicate PIN
+            const existing = await getEmployeeByPin(pin);
+            if (existing) {
+                throw new Error('PIN already in use');
+            }
+
+            const docRef = await addDoc(collection(db, 'employees'), {
+                name,
+                pin,
+                ssn: ssn ? maskSSN(ssn) : null,
+                status: 'off_clock',
+                currentPunchId: null,
+                createdAt: serverTimestamp()
+            });
+
+            return { id: docRef.id, name, pin };
+        }
+
+        async function deleteEmployee(employeeId) {
+            if (useLocalStorage) {
+                let employees = LocalDB.getEmployees();
+                employees = employees.filter(e => e.id !== employeeId);
+                LocalDB.saveEmployees(employees);
+                return;
+            }
+
+            await deleteDoc(doc(db, 'employees', employeeId));
+        }
+
+        async function getAllPunches() {
+            if (useLocalStorage) {
+                const punches = LocalDB.getPunches();
+                const employees = LocalDB.getEmployees();
+                return punches.map(p => ({
+                    ...p,
+                    employeeName: employees.find(e => e.id === p.employeeId)?.name || 'Unknown',
+                    checkInTime: new Date(p.checkInTime),
+                    checkOutTime: p.checkOutTime ? new Date(p.checkOutTime) : null
+                })).sort((a, b) => b.checkInTime - a.checkInTime);
+            }
+
+            const punchesSnap = await getDocs(
+                query(collection(db, 'punches'), orderBy('checkInTime', 'desc'), limit(50))
+            );
+
+            const employees = await getAllEmployees();
+            const employeeMap = {};
+            employees.forEach(e => employeeMap[e.id] = e.name);
+
+            return punchesSnap.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    employeeName: employeeMap[data.employeeId] || 'Unknown',
+                    checkInTime: data.checkInTime?.toDate?.() || new Date(data.checkInTime),
+                    checkOutTime: data.checkOutTime?.toDate?.() || (data.checkOutTime ? new Date(data.checkOutTime) : null)
+                };
+            });
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        // Main keypad
+        document.querySelector('.keypad').addEventListener('click', async (e) => {
+            const key = e.target.dataset.key;
+            if (!key) return;
+
+            if (key === 'clear') {
+                currentPin = '';
+            } else if (key === 'back') {
+                currentPin = currentPin.slice(0, -1);
+            } else if (currentPin.length < 4) {
+                currentPin += key;
+            }
+
+            updatePinDots(elements.pinDots, currentPin.length);
+
+            if (currentPin.length === 4) {
+                // Check PIN
+                const employee = await getEmployeeByPin(currentPin);
+                if (employee) {
+                    currentEmployee = employee;
+                    currentPunch = await getActivePunch(employee.id);
+                    showActionScreen();
+                } else {
+                    showPinError(elements.pinDots);
+                    currentPin = '';
+                }
+            }
+        });
+
+        // Admin keypad
+        document.getElementById('adminKeypad').addEventListener('click', (e) => {
+            const key = e.target.dataset.key;
+            if (!key) return;
+
+            if (key === 'clear') {
+                adminPin = '';
+            } else if (key === 'back') {
+                adminPin = adminPin.slice(0, -1);
+            } else if (adminPin.length < 4) {
+                adminPin += key;
+            }
+
+            updatePinDots(elements.adminPinDots, adminPin.length);
+
+            if (adminPin.length === 4) {
+                if (adminPin === ADMIN_PIN) {
+                    elements.adminPinModal.classList.remove('active');
+                    adminPin = '';
+                    updatePinDots(elements.adminPinDots, 0);
+                    showAdminScreen();
+                } else {
+                    showPinError(elements.adminPinDots);
+                    adminPin = '';
+                }
+            }
+        });
+
+        function showActionScreen() {
+            elements.employeeName.textContent = currentEmployee.name;
+
+            if (currentPunch) {
+                elements.employeeStatus.textContent = 'On Clock';
+                elements.employeeStatus.classList.add('on-clock');
+                elements.shiftInfo.textContent = `Started: ${formatTime(currentPunch.checkInTime)}`;
+                elements.clockInBtn.style.display = 'none';
+                elements.clockOutBtn.style.display = 'block';
+            } else {
+                elements.employeeStatus.textContent = 'Off Clock';
+                elements.employeeStatus.classList.remove('on-clock');
+                elements.shiftInfo.textContent = '';
+                elements.clockInBtn.style.display = 'block';
+                elements.clockOutBtn.style.display = 'none';
+            }
+
+            showScreen('action');
+        }
+
+        // Clock In
+        elements.clockInBtn.addEventListener('click', async () => {
+            elements.clockInBtn.classList.add('loading');
+            try {
+                currentPunch = await clockIn(currentEmployee.id);
+                currentEmployee.status = 'on_clock';
+                showToast(`Welcome, ${currentEmployee.name}! Shift started.`);
+                showActionScreen();
+            } catch (error) {
+                showToast('Error clocking in. Please try again.');
+                console.error(error);
+            }
+            elements.clockInBtn.classList.remove('loading');
+        });
+
+        // Clock Out - Show meal modal
+        elements.clockOutBtn.addEventListener('click', () => {
+            // Calculate hours worked
+            const hoursWorked = calculateHours(currentPunch.checkInTime, new Date());
+
+            // California law: Meal break required for shifts > 5 hours
+            if (hoursWorked < 5) {
+                // Short shift - no meal break required
+                completeClockOut(0, null);
+            } else {
+                // Show meal attestation modal
+                selectedMeal = null;
+                elements.reasonContainer.classList.remove('active');
+                elements.reasonInput.value = '';
+                elements.mealConfirmBtn.disabled = true;
+                document.querySelectorAll('.meal-option').forEach(opt => opt.classList.remove('selected'));
+                elements.mealModal.classList.add('active');
+            }
+        });
+
+        // Meal option selection
+        document.querySelectorAll('.meal-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.meal-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedMeal = parseInt(option.dataset.meal);
+
+                if (selectedMeal === 0) {
+                    elements.reasonContainer.classList.add('active');
+                    elements.mealConfirmBtn.disabled = true;
+                } else {
+                    elements.reasonContainer.classList.remove('active');
+                    elements.mealConfirmBtn.disabled = false;
+                }
+            });
+        });
+
+        // Reason input
+        elements.reasonInput.addEventListener('input', () => {
+            elements.mealConfirmBtn.disabled = elements.reasonInput.value.trim().length < 5;
+        });
+
+        // Confirm clock out
+        elements.mealConfirmBtn.addEventListener('click', () => {
+            const reason = selectedMeal === 0 ? elements.reasonInput.value.trim() : null;
+            elements.mealModal.classList.remove('active');
+            completeClockOut(selectedMeal, reason);
+        });
+
+        async function completeClockOut(mealDuration, noBreakReason) {
+            elements.clockOutBtn.classList.add('loading');
+            try {
+                await clockOut(currentPunch.id, currentEmployee.id, mealDuration, noBreakReason);
+
+                let message = `Goodbye, ${currentEmployee.name}! `;
+                if (mealDuration > 0) {
+                    message += `${mealDuration} min break recorded.`;
+                } else if (noBreakReason) {
+                    message += 'No break recorded - flagged for review.';
+                } else {
+                    message += 'Short shift - no break required.';
+                }
+
+                showToast(message);
+                resetToPin();
+            } catch (error) {
+                showToast('Error clocking out. Please try again.');
+                console.error(error);
+            }
+            elements.clockOutBtn.classList.remove('loading');
+        }
+
+        elements.mealCancelBtn.addEventListener('click', () => {
+            elements.mealModal.classList.remove('active');
+        });
+
+        // Cancel / Back button
+        elements.cancelBtn.addEventListener('click', resetToPin);
+
+        function resetToPin() {
+            currentEmployee = null;
+            currentPunch = null;
+            currentPin = '';
+            updatePinDots(elements.pinDots, 0);
+            showScreen('pin');
+        }
+
+        // Admin trigger
+        let adminClickCount = 0;
+        let adminClickTimer = null;
+
+        elements.adminTrigger.addEventListener('click', () => {
+            adminClickCount++;
+            if (adminClickTimer) clearTimeout(adminClickTimer);
+
+            if (adminClickCount >= 5) {
+                adminClickCount = 0;
+                elements.adminPinModal.classList.add('active');
+            } else {
+                adminClickTimer = setTimeout(() => {
+                    adminClickCount = 0;
+                }, 2000);
+            }
+        });
+
+        elements.adminPinCancelBtn.addEventListener('click', () => {
+            elements.adminPinModal.classList.remove('active');
+            adminPin = '';
+            updatePinDots(elements.adminPinDots, 0);
+        });
+
+        elements.adminBackBtn.addEventListener('click', resetToPin);
+
+        async function showAdminScreen() {
+            showScreen('admin');
+            await loadEmployeeList();
+            await loadPunchRecords();
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
+
+        async function loadEmployeeList() {
+            const employees = await getAllEmployees();
+            elements.employeeList.innerHTML = employees.map(emp => `
+                <div class="employee-item">
+                    <div>
+                        <div class="employee-item-name">${emp.name}</div>
+                        <div class="employee-item-pin">PIN: ${emp.pin} ${emp.ssn ? '| SSN: ' + emp.ssn : ''}</div>
+                    </div>
+                    <button class="btn-delete" data-id="${emp.id}">Delete</button>
+                </div>
+            `).join('');
+
+            // Delete handlers
+            elements.employeeList.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (confirm('Are you sure you want to delete this employee?')) {
+                        await deleteEmployee(btn.dataset.id);
+                        showToast('Employee deleted');
+                        loadEmployeeList();
+                    }
+                });
+            });
+        }
+
+        async function loadPunchRecords() {
+            const punches = await getAllPunches();
+            elements.punchRecords.innerHTML = punches.map(punch => {
+                const hoursWorked = punch.checkOutTime
+                    ? calculateHours(punch.checkInTime, punch.checkOutTime)
+                    : calculateHours(punch.checkInTime, new Date());
+
+                const netHours = punch.checkOutTime
+                    ? (hoursWorked - (punch.mealDuration || 0) / 60).toFixed(2)
+                    : 'In progress';
+
+                let mealClass = '';
+                let mealText = '';
+
+                if (!punch.checkOutTime) {
+                    mealText = 'Currently on clock';
+                } else if (punch.mealDuration > 0) {
+                    mealText = `✓ ${punch.mealDuration} min break taken`;
+                } else if (punch.noBreakReason) {
+                    mealClass = 'flagged';
+                    mealText = `⚠️ No break: "${punch.noBreakReason}"`;
+                } else if (hoursWorked < 5) {
+                    mealText = 'Short shift - no break required';
+                } else {
+                    mealClass = 'no-break';
+                    mealText = '⛔ No break recorded - REVIEW REQUIRED';
+                }
+
+                return `
+                    <div class="punch-record">
+                        <div class="punch-record-header">
+                            <span class="punch-record-name">${punch.employeeName}</span>
+                            <span class="punch-record-date">${formatDate(punch.checkInTime)}</span>
+                        </div>
+                        <div class="punch-record-times">
+                            <span>In: ${formatTime(punch.checkInTime)}</span>
+                            <span>Out: ${punch.checkOutTime ? formatTime(punch.checkOutTime) : '--:--'}</span>
+                            <span>Net: ${netHours} hrs</span>
+                        </div>
+                        <div class="punch-record-meal ${mealClass}">${mealText}</div>
+                    </div>
+                `;
+            }).join('') || '<p style="text-align: center; color: var(--text-secondary);">No records yet</p>';
+        }
+
+        // Add employee form
+        elements.addEmployeeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('newName').value.trim();
+            const pin = document.getElementById('newPin').value.trim();
+            const ssn = document.getElementById('newSsn').value.trim();
+
+            if (!/^\d{4}$/.test(pin)) {
+                showToast('PIN must be exactly 4 digits');
+                return;
+            }
+
+            try {
+                await addEmployee(name, pin, ssn);
+                showToast(`${name} added successfully`);
+                elements.addEmployeeForm.reset();
+                loadEmployeeList();
+
+                // Switch to employees tab
+                document.querySelector('[data-tab="employees"]').click();
+            } catch (error) {
+                showToast(error.message || 'Error adding employee');
+            }
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Prevent zoom on iOS
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('gesturechange', e => e.preventDefault());
+        document.addEventListener('gestureend', e => e.preventDefault());
+
+        // Auto-timeout back to PIN screen after inactivity
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if (screens.action.classList.contains('active')) {
+                    resetToPin();
+                }
+            }, 60000); // 1 minute
+        }
+
+        document.addEventListener('touchstart', resetInactivityTimer);
+        document.addEventListener('click', resetInactivityTimer);
+
+        console.log('Time Clock initialized. Demo PIN: 1234, Admin PIN: 0000');
+    </script>
+</body>
+</html>
