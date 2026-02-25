@@ -685,6 +685,7 @@
                 <input type="date" id="filterTo" onchange="updateSummary()">
                 <button class="btn btn-primary btn-small" onclick="setThisWeek()" data-i18n="thisWeek">This Week</button>
                 <button class="btn btn-primary btn-small" onclick="setThisMonth()" data-i18n="thisMonth">This Month</button>
+                <button class="btn btn-secondary btn-small" onclick="exportPDF()" data-i18n="exportPdf">Export PDF</button>
             </div>
             <div class="summary-grid">
                 <div class="summary-item">
@@ -1599,6 +1600,124 @@
             }
         }
 
+        // Export PDF
+        function exportPDF() {
+            const fromDate = document.getElementById('filterFrom').value;
+            const toDate = document.getElementById('filterTo').value;
+
+            if (!fromDate || !toDate) {
+                alert(t('fillAllFields'));
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const locale = getLocale();
+
+            // Title
+            doc.setFontSize(18);
+            doc.text(t('timesheetReport'), doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+
+            // Period subtitle
+            const fromFormatted = new Date(fromDate).toLocaleDateString(locale);
+            const toFormatted = new Date(toDate).toLocaleDateString(locale);
+            doc.setFontSize(12);
+            doc.text(`${t('period')}: ${fromFormatted} - ${toFormatted}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+
+            let yPos = 40;
+
+            // Filter entries and expenses to the selected period
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            to.setHours(23, 59, 59, 999);
+
+            const filteredEntries = state.timeEntries.filter(entry => {
+                const entryDate = new Date(entry.date);
+                return entryDate >= from && entryDate <= to;
+            });
+
+            const filteredExpenses = state.expenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate >= from && expenseDate <= to;
+            });
+
+            // Time entries table
+            if (filteredEntries.length > 0) {
+                const timeHeaders = [t('date'), t('clockInHeader'), t('clockOutHeader'), t('hours')];
+                const timeRows = filteredEntries.map(entry => {
+                    const clockIn = new Date(entry.clockIn);
+                    const clockOut = new Date(entry.clockOut);
+                    return [
+                        clockIn.toLocaleDateString(locale),
+                        clockIn.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+                        clockOut.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+                        entry.hours.toFixed(2)
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: yPos,
+                    head: [timeHeaders],
+                    body: timeRows,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 217, 255] }
+                });
+
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+
+            // Expenses table
+            if (filteredExpenses.length > 0) {
+                const expenseHeaders = [t('date'), t('description'), t('type'), t('amount')];
+                const expenseRows = filteredExpenses.map(expense => {
+                    const type = expense.type || 'reimburse';
+                    const typeLabel = type === 'reimburse' ? t('reimburse') : t('deduct');
+                    const prefix = type === 'deduct' ? '-' : '+';
+                    return [
+                        new Date(expense.date).toLocaleDateString(locale),
+                        expense.description,
+                        typeLabel,
+                        `${prefix}$${expense.amount.toFixed(2)}`
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: yPos,
+                    head: [expenseHeaders],
+                    body: expenseRows,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 217, 255] }
+                });
+
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+
+            // Summary block
+            const totalHours = filteredEntries.reduce((sum, e) => sum + e.hours, 0);
+            const grossEarnings = totalHours * state.hourlyRate;
+            const reimbursable = filteredExpenses
+                .filter(e => (e.type || 'reimburse') === 'reimburse')
+                .reduce((sum, e) => sum + e.amount, 0);
+            const deductions = filteredExpenses
+                .filter(e => e.type === 'deduct')
+                .reduce((sum, e) => sum + e.amount, 0);
+            const totalDue = grossEarnings + reimbursable - deductions;
+
+            doc.setFontSize(12);
+            doc.text(`${t('totalHours')}: ${totalHours.toFixed(2)}`, 14, yPos);
+            yPos += 8;
+            doc.text(`${t('grossEarnings')}: $${grossEarnings.toFixed(2)}`, 14, yPos);
+            yPos += 8;
+            doc.text(`${t('reimbursable')}: $${reimbursable.toFixed(2)}`, 14, yPos);
+            yPos += 8;
+            doc.text(`${t('deductions')}: $${deductions.toFixed(2)}`, 14, yPos);
+            yPos += 8;
+            doc.setFontSize(14);
+            doc.text(`${t('totalDue')}: $${totalDue.toFixed(2)}`, 14, yPos);
+
+            doc.save(`Timesheet_${fromDate}_to_${toDate}.pdf`);
+        }
+
         // PWA Install handling
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -1665,6 +1784,9 @@
 
         init();
     </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 
 </body>
 </html>
