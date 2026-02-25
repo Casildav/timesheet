@@ -367,28 +367,31 @@
 
         .language-selector {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            gap: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Google Translate widget styling */
-        .goog-te-gadget {
-            font-family: inherit !important;
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: #888;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
         }
 
-        .goog-te-gadget-simple {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            border-radius: 8px !important;
-            padding: 8px 12px !important;
+        .lang-btn.active {
+            background: #00d9ff;
+            color: #1a1a2e;
         }
 
-        .goog-te-gadget-simple .goog-te-menu-value {
-            color: #e4e4e4 !important;
-        }
-
-        .goog-te-gadget-simple .goog-te-menu-value span {
-            color: #e4e4e4 !important;
+        .lang-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.15);
+            color: #e4e4e4;
         }
 
         /* Daily subtotals section */
@@ -589,9 +592,10 @@
 <body>
     <div class="container">
         <div class="app-header">
-            <h1>⏱️ Timesheet</h1>
-            <div class="language-selector">
-                <div id="google_translate_element"></div>
+            <h1>⏱️ <span data-i18n="appTitle">Timesheet</span></h1>
+            <div class="language-selector" role="group" aria-label="Language">
+                <button class="lang-btn active" data-lang="en" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
             </div>
         </div>
 
@@ -599,115 +603,115 @@
         <div class="card clock-section">
             <div class="current-time notranslate" id="currentTime">00:00:00</div>
             <div class="current-date" id="currentDate"></div>
-            <div class="status clocked-out notranslate" id="status">Clocked Out</div>
-            <div id="elapsedTime" class="elapsed-time notranslate" style="display: none;">Elapsed: 00:00:00</div>
+            <div class="status clocked-out" id="status" data-i18n="clockedOut">Clocked Out</div>
+            <div id="elapsedTime" class="elapsed-time" style="display: none;"><span data-i18n="elapsed">Elapsed</span>: <span id="elapsedValue">00:00:00</span></div>
             <br><br>
-            <button class="btn btn-primary notranslate" id="clockBtn" onclick="toggleClock()">Clock In</button>
+            <button class="btn btn-primary" id="clockBtn" onclick="toggleClock()" data-i18n="clockIn">Clock In</button>
         </div>
 
         <!-- Settings Section -->
         <div class="card">
-            <h2>⚙️ Settings</h2>
+            <h2>⚙️ <span data-i18n="settings">Settings</span></h2>
             <div class="settings-row">
-                <label for="hourlyRate">Hourly Rate: $</label>
+                <label for="hourlyRate" data-i18n="hourlyRateLabel">Hourly Rate: $</label>
                 <input type="number" id="hourlyRate" value="25" min="0" step="0.01" onchange="saveSettings()">
             </div>
         </div>
 
         <!-- Time Entries Section -->
         <div class="card">
-            <h2>📋 Time Entries</h2>
-            
+            <h2>📋 <span data-i18n="timeEntries">Time Entries</span></h2>
+
             <!-- Manual Entry Form -->
             <div class="manual-entry-section">
-                <h3 class="section-subtitle">➕ Add Manual Entry</h3>
+                <h3 class="section-subtitle">➕ <span data-i18n="addManualEntry">Add Manual Entry</span></h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="manualDate">Date</label>
+                        <label for="manualDate" data-i18n="date">Date</label>
                         <input type="date" id="manualDate">
                     </div>
                     <div class="form-group">
-                        <label for="manualClockIn">Clock In</label>
+                        <label for="manualClockIn" data-i18n="clockInHeader">Clock In</label>
                         <input type="time" id="manualClockIn">
                     </div>
                     <div class="form-group">
-                        <label for="manualClockOut">Clock Out</label>
+                        <label for="manualClockOut" data-i18n="clockOutHeader">Clock Out</label>
                         <input type="time" id="manualClockOut">
                     </div>
-                    <button class="btn btn-primary btn-small" onclick="addManualEntry()">Add Entry</button>
+                    <button class="btn btn-primary btn-small" onclick="addManualEntry()" data-i18n="addEntry">Add Entry</button>
                 </div>
             </div>
-            
+
             <div class="entries-divider"></div>
-            <h3 class="section-subtitle">📜 Entry History</h3>
+            <h3 class="section-subtitle">📜 <span data-i18n="entryHistory">Entry History</span></h3>
             <div id="timeEntriesTable"></div>
         </div>
 
         <!-- Expenses Section -->
         <div class="card">
-            <h2>💸 Expenses</h2>
+            <h2>💸 <span data-i18n="expenses">Expenses</span></h2>
             <div class="expense-form">
                 <div class="form-group">
-                    <label for="expenseDate">Date</label>
+                    <label for="expenseDate" data-i18n="date">Date</label>
                     <input type="date" id="expenseDate">
                 </div>
                 <div class="form-group">
-                    <label for="expenseDesc">Description</label>
-                    <input type="text" id="expenseDesc" placeholder="Description">
+                    <label for="expenseDesc" data-i18n="description">Description</label>
+                    <input type="text" id="expenseDesc" placeholder="Description" data-i18n-placeholder="description">
                 </div>
                 <div class="form-group">
-                    <label for="expenseType">Type</label>
+                    <label for="expenseType" data-i18n="type">Type</label>
                     <select id="expenseType">
-                        <option value="reimburse">Reimburse</option>
-                        <option value="deduct">Deduct</option>
+                        <option value="reimburse" data-i18n="reimburse">Reimburse</option>
+                        <option value="deduct" data-i18n="deduct">Deduct</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="expenseAmount">Amount</label>
+                    <label for="expenseAmount" data-i18n="amount">Amount</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01">
                 </div>
-                <button class="btn btn-primary btn-small" onclick="addExpense()">Add</button>
+                <button class="btn btn-primary btn-small" onclick="addExpense()" data-i18n="add">Add</button>
             </div>
             <div id="expensesTable"></div>
         </div>
 
         <!-- Summary Section -->
         <div class="card">
-            <h2>📊 Summary</h2>
+            <h2>📊 <span data-i18n="summary">Summary</span></h2>
             <div class="date-filter">
-                <label>From:</label>
+                <label data-i18n="from">From:</label>
                 <input type="date" id="filterFrom" onchange="updateSummary()">
-                <label>To:</label>
+                <label data-i18n="to">To:</label>
                 <input type="date" id="filterTo" onchange="updateSummary()">
-                <button class="btn btn-primary btn-small" onclick="setThisWeek()">This Week</button>
-                <button class="btn btn-primary btn-small" onclick="setThisMonth()">This Month</button>
+                <button class="btn btn-primary btn-small" onclick="setThisWeek()" data-i18n="thisWeek">This Week</button>
+                <button class="btn btn-primary btn-small" onclick="setThisMonth()" data-i18n="thisMonth">This Month</button>
             </div>
             <div class="summary-grid">
                 <div class="summary-item">
-                    <div class="label">Total Hours</div>
+                    <div class="label" data-i18n="totalHours">Total Hours</div>
                     <div class="value hours notranslate" id="totalHours">0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">Gross Earnings</div>
+                    <div class="label" data-i18n="grossEarnings">Gross Earnings</div>
                     <div class="value earnings notranslate" id="grossEarnings">$0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">+ Reimbursable</div>
+                    <div class="label" data-i18n="reimbursable">+ Reimbursable</div>
                     <div class="value reimbursable notranslate" id="totalReimbursable">$0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">- Deductions</div>
+                    <div class="label" data-i18n="deductions">- Deductions</div>
                     <div class="value deductions notranslate" id="totalDeductions">$0.00</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">Total Due</div>
+                    <div class="label" data-i18n="totalDue">Total Due</div>
                     <div class="value subtotal notranslate" id="subtotal">$0.00</div>
                 </div>
             </div>
 
             <!-- Daily Subtotals -->
             <div class="daily-subtotals">
-                <h3>Daily Breakdown</h3>
+                <h3 data-i18n="dailyBreakdown">Daily Breakdown</h3>
                 <div class="daily-subtotals-list" id="dailySubtotals"></div>
             </div>
         </div>
@@ -716,25 +720,25 @@
     <!-- Edit Time Entry Modal -->
     <div class="modal-overlay" id="editTimeModal">
         <div class="modal">
-            <h3>Edit Time Entry</h3>
+            <h3 data-i18n="editTimeEntry">Edit Time Entry</h3>
             <div class="modal-form">
                 <input type="hidden" id="editTimeId">
                 <div class="form-group">
-                    <label for="editTimeDate">Date</label>
+                    <label for="editTimeDate" data-i18n="date">Date</label>
                     <input type="date" id="editTimeDate">
                 </div>
                 <div class="form-group">
-                    <label for="editTimeClockIn">Clock In</label>
+                    <label for="editTimeClockIn" data-i18n="clockInHeader">Clock In</label>
                     <input type="time" id="editTimeClockIn">
                 </div>
                 <div class="form-group">
-                    <label for="editTimeClockOut">Clock Out</label>
+                    <label for="editTimeClockOut" data-i18n="clockOutHeader">Clock Out</label>
                     <input type="time" id="editTimeClockOut">
                 </div>
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-secondary btn-small" onclick="closeEditTimeModal()">Cancel</button>
-                <button class="btn btn-primary btn-small" onclick="saveTimeEntry()">Save</button>
+                <button class="btn btn-secondary btn-small" onclick="closeEditTimeModal()" data-i18n="cancel">Cancel</button>
+                <button class="btn btn-primary btn-small" onclick="saveTimeEntry()" data-i18n="save">Save</button>
             </div>
         </div>
     </div>
@@ -742,45 +746,218 @@
     <!-- Edit Expense Modal -->
     <div class="modal-overlay" id="editExpenseModal">
         <div class="modal">
-            <h3>Edit Expense</h3>
+            <h3 data-i18n="editExpense">Edit Expense</h3>
             <div class="modal-form">
                 <input type="hidden" id="editExpenseId">
                 <div class="form-group">
-                    <label for="editExpenseDate">Date</label>
+                    <label for="editExpenseDate" data-i18n="date">Date</label>
                     <input type="date" id="editExpenseDate">
                 </div>
                 <div class="form-group">
-                    <label for="editExpenseDesc">Description</label>
+                    <label for="editExpenseDesc" data-i18n="description">Description</label>
                     <input type="text" id="editExpenseDesc">
                 </div>
                 <div class="form-group">
-                    <label for="editExpenseType">Type</label>
+                    <label for="editExpenseType" data-i18n="type">Type</label>
                     <select id="editExpenseType">
-                        <option value="reimburse">Reimburse</option>
-                        <option value="deduct">Deduct</option>
+                        <option value="reimburse" data-i18n="reimburse">Reimburse</option>
+                        <option value="deduct" data-i18n="deduct">Deduct</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="editExpenseAmount">Amount</label>
+                    <label for="editExpenseAmount" data-i18n="amount">Amount</label>
                     <input type="number" id="editExpenseAmount" min="0" step="0.01">
                 </div>
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-secondary btn-small" onclick="closeEditExpenseModal()">Cancel</button>
-                <button class="btn btn-primary btn-small" onclick="saveExpense()">Save</button>
+                <button class="btn btn-secondary btn-small" onclick="closeEditExpenseModal()" data-i18n="cancel">Cancel</button>
+                <button class="btn btn-primary btn-small" onclick="saveExpense()" data-i18n="save">Save</button>
             </div>
         </div>
     </div>
 
     <!-- Install Banner -->
     <div class="install-banner" id="installBanner">
-        <p>📲 Install Timesheet for quick access</p>
-        <button class="btn btn-small" onclick="installApp()">Install</button>
+        <p>📲 <span data-i18n="installPrompt">Install Timesheet for quick access</span></p>
+        <button class="btn btn-small" onclick="installApp()" data-i18n="install">Install</button>
         <button class="dismiss" onclick="dismissInstall()">×</button>
     </div>
 
     <script>
+        // ============================================================
+        // i18n System
+        // ============================================================
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        let currentLang = localStorage.getItem('timesheetLang') || 'en';
+
+        const translations = {
+            en: {
+                appTitle: 'Timesheet',
+                clockIn: 'Clock In',
+                clockOut: 'Clock Out',
+                clockedIn: 'Clocked In',
+                clockedOut: 'Clocked Out',
+                elapsed: 'Elapsed',
+                settings: 'Settings',
+                hourlyRateLabel: 'Hourly Rate: $',
+                timeEntries: 'Time Entries',
+                addManualEntry: 'Add Manual Entry',
+                entryHistory: 'Entry History',
+                addEntry: 'Add Entry',
+                date: 'Date',
+                clockInHeader: 'Clock In',
+                clockOutHeader: 'Clock Out',
+                hours: 'Hours',
+                noTimeEntries: 'No time entries yet. Clock in or add a manual entry!',
+                expenses: 'Expenses',
+                description: 'Description',
+                type: 'Type',
+                amount: 'Amount',
+                reimburse: 'Reimburse',
+                deduct: 'Deduct',
+                add: 'Add',
+                noExpenses: 'No expenses recorded yet.',
+                summary: 'Summary',
+                from: 'From:',
+                to: 'To:',
+                thisWeek: 'This Week',
+                thisMonth: 'This Month',
+                exportPdf: 'Export PDF',
+                totalHours: 'Total Hours',
+                grossEarnings: 'Gross Earnings',
+                reimbursable: '+ Reimbursable',
+                deductions: '- Deductions',
+                totalDue: 'Total Due',
+                dailyBreakdown: 'Daily Breakdown',
+                noDataForPeriod: 'No data for selected period.',
+                editTimeEntry: 'Edit Time Entry',
+                editExpense: 'Edit Expense',
+                save: 'Save',
+                cancel: 'Cancel',
+                fillAllFields: 'Please fill in all fields',
+                clockOutAfterIn: 'Clock out time must be after clock in time',
+                fillAllExpenseFields: 'Please fill in all expense fields',
+                deleteTimeConfirm: 'Delete this time entry?',
+                deleteExpenseConfirm: 'Delete this expense?',
+                installPrompt: 'Install Timesheet for quick access',
+                install: 'Install',
+                timesheetReport: 'Timesheet Report',
+                period: 'Period',
+                editLabel: 'Edit',
+                deleteLabel: 'Delete'
+            },
+            es: {
+                appTitle: 'Hoja de Horas',
+                clockIn: 'Registrar Entrada',
+                clockOut: 'Registrar Salida',
+                clockedIn: 'Trabajando',
+                clockedOut: 'Fuera de Turno',
+                elapsed: 'Transcurrido',
+                settings: 'Configuraci\u00f3n',
+                hourlyRateLabel: 'Tarifa por Hora: $',
+                timeEntries: 'Registro de Horas',
+                addManualEntry: 'Agregar Entrada Manual',
+                entryHistory: 'Historial de Entradas',
+                addEntry: 'Agregar Entrada',
+                date: 'Fecha',
+                clockInHeader: 'Entrada',
+                clockOutHeader: 'Salida',
+                hours: 'Horas',
+                noTimeEntries: '\u00a1A\u00fan no hay entradas. \u00a1Registra tu entrada o agrega una manualmente!',
+                expenses: 'Gastos',
+                description: 'Descripci\u00f3n',
+                type: 'Tipo',
+                amount: 'Monto',
+                reimburse: 'Reembolsar',
+                deduct: 'Deducir',
+                add: 'Agregar',
+                noExpenses: 'A\u00fan no hay gastos registrados.',
+                summary: 'Resumen',
+                from: 'Desde:',
+                to: 'Hasta:',
+                thisWeek: 'Esta Semana',
+                thisMonth: 'Este Mes',
+                exportPdf: 'Exportar PDF',
+                totalHours: 'Horas Totales',
+                grossEarnings: 'Ingresos Brutos',
+                reimbursable: '+ Reembolsable',
+                deductions: '- Deducciones',
+                totalDue: 'Total a Pagar',
+                dailyBreakdown: 'Desglose Diario',
+                noDataForPeriod: 'No hay datos para el periodo seleccionado.',
+                editTimeEntry: 'Editar Entrada de Tiempo',
+                editExpense: 'Editar Gasto',
+                save: 'Guardar',
+                cancel: 'Cancelar',
+                fillAllFields: 'Por favor completa todos los campos',
+                clockOutAfterIn: 'La hora de salida debe ser posterior a la de entrada',
+                fillAllExpenseFields: 'Por favor completa todos los campos del gasto',
+                deleteTimeConfirm: '\u00bfEliminar esta entrada de tiempo?',
+                deleteExpenseConfirm: '\u00bfEliminar este gasto?',
+                installPrompt: 'Instala Hoja de Horas para acceso r\u00e1pido',
+                install: 'Instalar',
+                timesheetReport: 'Reporte de Horas',
+                period: 'Per\u00edodo',
+                editLabel: 'Editar',
+                deleteLabel: 'Eliminar'
+            }
+        };
+
+        function t(key) {
+            return (translations[currentLang] && translations[currentLang][key]) || translations.en[key] || key;
+        }
+
+        function getLocale() {
+            return currentLang === 'es' ? 'es-MX' : 'en-US';
+        }
+
+        function applyTranslations() {
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                el.textContent = t(el.getAttribute('data-i18n'));
+            });
+
+            // Update placeholder attributes
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+            });
+
+            // Update language toggle button active states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === currentLang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Update html lang attribute
+            document.documentElement.lang = currentLang;
+
+            // Re-render dynamic content
+            renderTimeEntries();
+            renderExpenses();
+            updateSummary();
+            updateClock();
+            restoreUIState();
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('timesheetLang', lang);
+            applyTranslations();
+        }
+
+        // ============================================================
         // Data storage
+        // ============================================================
+
         let state = {
             isClockedIn: false,
             clockInTime: null,
@@ -826,7 +1003,7 @@
         function updateClock() {
             const now = new Date();
             document.getElementById('currentTime').textContent = now.toLocaleTimeString();
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', {
+            document.getElementById('currentDate').textContent = now.toLocaleDateString(getLocale(), {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -839,8 +1016,8 @@
                 const hours = Math.floor(elapsed / 3600);
                 const minutes = Math.floor((elapsed % 3600) / 60);
                 const seconds = elapsed % 60;
-                document.getElementById('elapsedTime').textContent = 
-                    `Elapsed: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.getElementById('elapsedValue').textContent =
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             }
         }
 
@@ -855,9 +1032,9 @@
                 // Clock In
                 state.isClockedIn = true;
                 state.clockInTime = now.toISOString();
-                statusEl.textContent = 'Clocked In';
+                statusEl.textContent = t('clockedIn');
                 statusEl.className = 'status clocked-in';
-                btnEl.textContent = 'Clock Out';
+                btnEl.textContent = t('clockOut');
                 btnEl.className = 'btn btn-danger';
                 elapsedEl.style.display = 'block';
             } else {
@@ -865,7 +1042,7 @@
                 state.isClockedIn = false;
                 const clockIn = new Date(state.clockInTime);
                 const hours = (now - clockIn) / (1000 * 60 * 60);
-                
+
                 state.timeEntries.push({
                     id: Date.now(),
                     date: clockIn.toISOString().split('T')[0],
@@ -875,12 +1052,12 @@
                 });
 
                 state.clockInTime = null;
-                statusEl.textContent = 'Clocked Out';
+                statusEl.textContent = t('clockedOut');
                 statusEl.className = 'status clocked-out';
-                btnEl.textContent = 'Clock In';
+                btnEl.textContent = t('clockIn');
                 btnEl.className = 'btn btn-primary';
                 elapsedEl.style.display = 'none';
-                
+
                 renderTimeEntries();
                 updateSummary();
             }
@@ -895,7 +1072,7 @@
             const clockOutTime = document.getElementById('manualClockOut').value;
 
             if (!date || !clockInTime || !clockOutTime) {
-                alert('Please fill in all fields');
+                alert(t('fillAllFields'));
                 return;
             }
 
@@ -903,7 +1080,7 @@
             const clockOut = new Date(`${date}T${clockOutTime}`);
 
             if (clockOut <= clockIn) {
-                alert('Clock out time must be after clock in time');
+                alert(t('clockOutAfterIn'));
                 return;
             }
 
@@ -955,7 +1132,7 @@
             const clockOutTime = document.getElementById('editTimeClockOut').value;
 
             if (!date || !clockInTime || !clockOutTime) {
-                alert('Please fill in all fields');
+                alert(t('fillAllFields'));
                 return;
             }
 
@@ -963,7 +1140,7 @@
             const clockOut = new Date(`${date}T${clockOutTime}`);
 
             if (clockOut <= clockIn) {
-                alert('Clock out time must be after clock in time');
+                alert(t('clockOutAfterIn'));
                 return;
             }
 
@@ -989,53 +1166,81 @@
         // Render time entries table
         function renderTimeEntries() {
             const container = document.getElementById('timeEntriesTable');
-            
+
             if (state.timeEntries.length === 0) {
-                container.innerHTML = '<div class="empty-state">No time entries yet. Clock in or add a manual entry!</div>';
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-state';
+                emptyDiv.textContent = t('noTimeEntries');
+                container.replaceChildren(emptyDiv);
                 return;
             }
 
             // Sort by date descending
             const sorted = [...state.timeEntries].sort((a, b) => new Date(b.clockIn) - new Date(a.clockIn));
+            const locale = getLocale();
 
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Clock In</th>
-                            <th>Clock Out</th>
-                            <th>Hours</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            [t('date'), t('clockInHeader'), t('clockOutHeader'), t('hours'), ''].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
 
+            const tbody = document.createElement('tbody');
             sorted.forEach(entry => {
                 const clockIn = new Date(entry.clockIn);
                 const clockOut = new Date(entry.clockOut);
-                html += `
-                    <tr>
-                        <td>${clockIn.toLocaleDateString()}</td>
-                        <td>${clockIn.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                        <td>${clockOut.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                        <td>${entry.hours.toFixed(2)}</td>
-                        <td class="actions-cell">
-                            <button class="btn-icon edit" onclick="openEditTimeModal(${entry.id})" title="Edit">✎</button>
-                            <button class="btn-icon delete" onclick="deleteTimeEntry(${entry.id})" title="Delete">✕</button>
-                        </td>
-                    </tr>
-                `;
-            });
+                const tr = document.createElement('tr');
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+                const tdDate = document.createElement('td');
+                tdDate.textContent = clockIn.toLocaleDateString(locale);
+                tr.appendChild(tdDate);
+
+                const tdIn = document.createElement('td');
+                tdIn.textContent = clockIn.toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'});
+                tr.appendChild(tdIn);
+
+                const tdOut = document.createElement('td');
+                tdOut.textContent = clockOut.toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'});
+                tr.appendChild(tdOut);
+
+                const tdHours = document.createElement('td');
+                tdHours.textContent = entry.hours.toFixed(2);
+                tr.appendChild(tdHours);
+
+                const tdActions = document.createElement('td');
+                tdActions.className = 'actions-cell';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-icon edit';
+                editBtn.onclick = () => openEditTimeModal(entry.id);
+                editBtn.title = t('editLabel');
+                editBtn.setAttribute('aria-label', t('editLabel'));
+                editBtn.textContent = '\u270E';
+                tdActions.appendChild(editBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-icon delete';
+                deleteBtn.onclick = () => deleteTimeEntry(entry.id);
+                deleteBtn.title = t('deleteLabel');
+                deleteBtn.setAttribute('aria-label', t('deleteLabel'));
+                deleteBtn.textContent = '\u2715';
+                tdActions.appendChild(deleteBtn);
+
+                tr.appendChild(tdActions);
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            container.replaceChildren(table);
         }
 
         // Delete time entry
         function deleteTimeEntry(id) {
-            if (!confirm('Delete this time entry?')) return;
+            if (!confirm(t('deleteTimeConfirm'))) return;
             state.timeEntries = state.timeEntries.filter(e => e.id !== id);
             saveState();
             renderTimeEntries();
@@ -1050,7 +1255,7 @@
             const amount = parseFloat(document.getElementById('expenseAmount').value);
 
             if (!date || !desc || isNaN(amount) || amount <= 0) {
-                alert('Please fill in all expense fields');
+                alert(t('fillAllExpenseFields'));
                 return;
             }
 
@@ -1100,7 +1305,7 @@
             const amount = parseFloat(document.getElementById('editExpenseAmount').value);
 
             if (!date || !desc || isNaN(amount) || amount <= 0) {
-                alert('Please fill in all fields');
+                alert(t('fillAllFields'));
                 return;
             }
 
@@ -1124,56 +1329,86 @@
         // Render expenses table
         function renderExpenses() {
             const container = document.getElementById('expensesTable');
-            
+
             if (state.expenses.length === 0) {
-                container.innerHTML = '<div class="empty-state">No expenses recorded yet.</div>';
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-state';
+                emptyDiv.textContent = t('noExpenses');
+                container.replaceChildren(emptyDiv);
                 return;
             }
 
             // Sort by date descending
             const sorted = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const locale = getLocale();
 
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            [t('date'), t('description'), t('type'), t('amount'), ''].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
 
+            const tbody = document.createElement('tbody');
             sorted.forEach(expense => {
                 const type = expense.type || 'reimburse';
-                const typeLabel = type === 'reimburse' ? 'Reimburse' : 'Deduct';
+                const typeLabel = type === 'reimburse' ? t('reimburse') : t('deduct');
                 const typeClass = type === 'reimburse' ? 'expense-reimburse' : 'expense-deduct';
                 const amountPrefix = type === 'deduct' ? '-' : '+';
-                
-                html += `
-                    <tr>
-                        <td>${new Date(expense.date).toLocaleDateString()}</td>
-                        <td>${expense.description}</td>
-                        <td class="${typeClass}">${typeLabel}</td>
-                        <td class="${typeClass}">${amountPrefix}$${expense.amount.toFixed(2)}</td>
-                        <td class="actions-cell">
-                            <button class="btn-icon edit" onclick="openEditExpenseModal(${expense.id})" title="Edit">✎</button>
-                            <button class="btn-icon delete" onclick="deleteExpense(${expense.id})" title="Delete">✕</button>
-                        </td>
-                    </tr>
-                `;
-            });
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+                const tr = document.createElement('tr');
+
+                const tdDate = document.createElement('td');
+                tdDate.textContent = new Date(expense.date).toLocaleDateString(locale);
+                tr.appendChild(tdDate);
+
+                const tdDesc = document.createElement('td');
+                tdDesc.textContent = expense.description;
+                tr.appendChild(tdDesc);
+
+                const tdType = document.createElement('td');
+                tdType.className = typeClass;
+                tdType.textContent = typeLabel;
+                tr.appendChild(tdType);
+
+                const tdAmount = document.createElement('td');
+                tdAmount.className = typeClass;
+                tdAmount.textContent = `${amountPrefix}$${expense.amount.toFixed(2)}`;
+                tr.appendChild(tdAmount);
+
+                const tdActions = document.createElement('td');
+                tdActions.className = 'actions-cell';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-icon edit';
+                editBtn.onclick = () => openEditExpenseModal(expense.id);
+                editBtn.title = t('editLabel');
+                editBtn.setAttribute('aria-label', t('editLabel'));
+                editBtn.textContent = '\u270E';
+                tdActions.appendChild(editBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-icon delete';
+                deleteBtn.onclick = () => deleteExpense(expense.id);
+                deleteBtn.title = t('deleteLabel');
+                deleteBtn.setAttribute('aria-label', t('deleteLabel'));
+                deleteBtn.textContent = '\u2715';
+                tdActions.appendChild(deleteBtn);
+
+                tr.appendChild(tdActions);
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            container.replaceChildren(table);
         }
 
         // Delete expense
         function deleteExpense(id) {
-            if (!confirm('Delete this expense?')) return;
+            if (!confirm(t('deleteExpenseConfirm'))) return;
             state.expenses = state.expenses.filter(e => e.id !== id);
             saveState();
             renderExpenses();
@@ -1268,21 +1503,25 @@
         // Render daily subtotals
         function renderDailySubtotals(entries, expenses, from, to) {
             const container = document.getElementById('dailySubtotals');
-            
+            const locale = getLocale();
+
             // Get all unique dates from entries and expenses
             const allDates = new Set();
             entries.forEach(e => allDates.add(e.date));
             expenses.forEach(e => allDates.add(e.date));
-            
+
             if (allDates.size === 0) {
-                container.innerHTML = '<div class="empty-state">No data for selected period.</div>';
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-state';
+                emptyDiv.textContent = t('noDataForPeriod');
+                container.replaceChildren(emptyDiv);
                 return;
             }
 
             // Sort dates descending
             const sortedDates = [...allDates].sort((a, b) => new Date(b) - new Date(a));
 
-            let html = '';
+            const fragment = document.createDocumentFragment();
             sortedDates.forEach(date => {
                 // Calculate daily hours
                 const dayEntries = entries.filter(e => e.date === date);
@@ -1301,40 +1540,68 @@
                 // Daily total
                 const dayTotal = dayEarnings + dayReimbursable - dayDeductions;
 
-                const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                const formattedDate = new Date(date).toLocaleDateString(locale, {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric'
                 });
 
-                html += `
-                    <div class="daily-item">
-                        <span class="daily-date">${formattedDate}</span>
-                        <span class="daily-breakdown">
-                            <span>${dayHours.toFixed(1)}h</span>
-                            <span class="expense-reimburse">+$${dayReimbursable.toFixed(2)}</span>
-                            <span class="expense-deduct">-$${dayDeductions.toFixed(2)}</span>
-                        </span>
-                        <span class="daily-total">$${dayTotal.toFixed(2)}</span>
-                    </div>
-                `;
+                const item = document.createElement('div');
+                item.className = 'daily-item';
+
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'daily-date';
+                dateSpan.textContent = formattedDate;
+                item.appendChild(dateSpan);
+
+                const breakdownSpan = document.createElement('span');
+                breakdownSpan.className = 'daily-breakdown';
+
+                const hoursSpan = document.createElement('span');
+                hoursSpan.textContent = `${dayHours.toFixed(1)}h`;
+                breakdownSpan.appendChild(hoursSpan);
+
+                const reimbSpan = document.createElement('span');
+                reimbSpan.className = 'expense-reimburse';
+                reimbSpan.textContent = `+$${dayReimbursable.toFixed(2)}`;
+                breakdownSpan.appendChild(reimbSpan);
+
+                const deductSpan = document.createElement('span');
+                deductSpan.className = 'expense-deduct';
+                deductSpan.textContent = `-$${dayDeductions.toFixed(2)}`;
+                breakdownSpan.appendChild(deductSpan);
+
+                item.appendChild(breakdownSpan);
+
+                const totalSpan = document.createElement('span');
+                totalSpan.className = 'daily-total';
+                totalSpan.textContent = `$${dayTotal.toFixed(2)}`;
+                item.appendChild(totalSpan);
+
+                fragment.appendChild(item);
             });
 
-            container.innerHTML = html;
+            container.replaceChildren(fragment);
         }
 
         // Restore UI state on load
         function restoreUIState() {
+            const statusEl = document.getElementById('status');
+            const btnEl = document.getElementById('clockBtn');
+            const elapsedEl = document.getElementById('elapsedTime');
+
             if (state.isClockedIn) {
-                const statusEl = document.getElementById('status');
-                const btnEl = document.getElementById('clockBtn');
-                const elapsedEl = document.getElementById('elapsedTime');
-                
-                statusEl.textContent = 'Clocked In';
+                statusEl.textContent = t('clockedIn');
                 statusEl.className = 'status clocked-in';
-                btnEl.textContent = 'Clock Out';
+                btnEl.textContent = t('clockOut');
                 btnEl.className = 'btn btn-danger';
                 elapsedEl.style.display = 'block';
+            } else {
+                statusEl.textContent = t('clockedOut');
+                statusEl.className = 'status clocked-out';
+                btnEl.textContent = t('clockIn');
+                btnEl.className = 'btn btn-primary';
+                elapsedEl.style.display = 'none';
             }
         }
 
@@ -1397,7 +1664,8 @@
             setInterval(updateClock, 1000);
             renderTimeEntries();
             renderExpenses();
-            
+            applyTranslations();
+
             // Set default dates to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('manualDate').value = today;
@@ -1407,17 +1675,5 @@
         init();
     </script>
 
-    <!-- Google Translate -->
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,es',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-    </script>
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
