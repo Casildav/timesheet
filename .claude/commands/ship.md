@@ -158,8 +158,36 @@ VERIFICATION:
    - Include `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>` in the message.
    - Use HEREDOC format for the commit message.
 
-## Step 7: Push
+## Step 7: Merge and Push
 
+Check which branch you're on:
+
+```bash
+git branch --show-current
+```
+
+**If on a feature branch** (e.g., `feature/something`):
+1. Commit any remaining changes on the feature branch.
+2. Switch to main and pull latest:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+3. Merge the feature branch:
+   ```bash
+   git merge feature/<name>
+   ```
+4. If merge conflicts occur: resolve them, run tests again, then continue.
+5. Delete the feature branch locally:
+   ```bash
+   git branch -d feature/<name>
+   ```
+6. Push main:
+   ```bash
+   git push origin main
+   ```
+
+**If on main** (direct commit):
 ```bash
 git push origin main
 ```
@@ -171,6 +199,7 @@ If push fails due to email privacy, ensure both author and committer use the nor
 ```
 SHIPPED: [commit hash]
 TIER: [1/2/3] — [Light/Standard/Full]
+BRANCH: [feature/<name> → main, or direct to main]
 CACHE: v[old] → v[new]
 TESTS: [X passed, Y failed]
 REVIEWS RUN: [list of review skills invoked, or "quick sanity check"]
