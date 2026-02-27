@@ -1286,6 +1286,14 @@
             localStorage.setItem('timesheetState', JSON.stringify(state));
         }
 
+        // Format a Date as YYYY-MM-DD in local timezone (not UTC)
+        function toLocalDateString(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // Save settings
         function saveSettings() {
             state.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
@@ -1339,7 +1347,7 @@
 
                 state.timeEntries.push({
                     id: Date.now(),
-                    date: clockIn.toISOString().split('T')[0],
+                    date: toLocalDateString(clockIn),
                     clockIn: state.clockInTime,
                     clockOut: now.toISOString(),
                     hours: hours
@@ -1718,8 +1726,8 @@
             const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-            document.getElementById('filterFrom').value = startOfWeek.toISOString().split('T')[0];
-            document.getElementById('filterTo').value = endOfWeek.toISOString().split('T')[0];
+            document.getElementById('filterFrom').value = toLocalDateString(startOfWeek);
+            document.getElementById('filterTo').value = toLocalDateString(endOfWeek);
             updateSummary();
         }
 
@@ -1729,8 +1737,8 @@
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-            document.getElementById('filterFrom').value = startOfMonth.toISOString().split('T')[0];
-            document.getElementById('filterTo').value = endOfMonth.toISOString().split('T')[0];
+            document.getElementById('filterFrom').value = toLocalDateString(startOfMonth);
+            document.getElementById('filterTo').value = toLocalDateString(endOfMonth);
             updateSummary();
         }
 
@@ -2076,7 +2084,7 @@
             applyTranslations();
 
             // Set default dates to today
-            const today = new Date().toISOString().split('T')[0];
+            const today = toLocalDateString(new Date());
             document.getElementById('manualDate').value = today;
             document.getElementById('expenseDate').value = today;
         }

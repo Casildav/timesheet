@@ -1,6 +1,14 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
+// Helper: format date as YYYY-MM-DD in local timezone (mirrors app's toLocalDateString)
+function toLocalDate(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Helper to clear localStorage before each test
 test.beforeEach(async ({ page }) => {
   await page.goto('timesheet.html');
@@ -51,7 +59,7 @@ test.describe('Clock In/Out', () => {
 
 test.describe('Manual Time Entry', () => {
   test('should add manual time entry', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
@@ -64,7 +72,7 @@ test.describe('Manual Time Entry', () => {
   });
 
   test('should reject invalid time entry (clock out before clock in)', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     page.on('dialog', dialog => dialog.accept());
     
@@ -78,7 +86,7 @@ test.describe('Manual Time Entry', () => {
   });
 
   test('should edit existing time entry', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add entry
     await page.fill('#manualDate', today);
@@ -101,7 +109,7 @@ test.describe('Manual Time Entry', () => {
   });
 
   test('should delete time entry', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add entry
     await page.fill('#manualDate', today);
@@ -124,7 +132,7 @@ test.describe('Manual Time Entry', () => {
 
 test.describe('Expenses', () => {
   test('should add reimbursable expense', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     await page.fill('#expenseDate', today);
     await page.fill('#expenseDesc', 'Office supplies');
@@ -140,7 +148,7 @@ test.describe('Expenses', () => {
   });
 
   test('should add deductible expense', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     await page.fill('#expenseDate', today);
     await page.fill('#expenseDesc', 'Personal expense');
@@ -155,7 +163,7 @@ test.describe('Expenses', () => {
   });
 
   test('should edit expense type', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add reimbursable expense
     await page.fill('#expenseDate', today);
@@ -177,7 +185,7 @@ test.describe('Expenses', () => {
   });
 
   test('should delete expense', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     await page.fill('#expenseDate', today);
     await page.fill('#expenseDesc', 'Test expense');
@@ -205,7 +213,7 @@ test.describe('Summary Calculations - Protected Business Logic', () => {
     await page.fill('#hourlyRate', '50');
     await page.locator('#hourlyRate').blur();
     
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add 8 hours of work
     await page.fill('#manualDate', today);
@@ -222,7 +230,7 @@ test.describe('Summary Calculations - Protected Business Logic', () => {
     await page.fill('#hourlyRate', '50');
     await page.locator('#hourlyRate').blur();
     
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add 8 hours = $400
     await page.fill('#manualDate', today);
@@ -247,7 +255,7 @@ test.describe('Summary Calculations - Protected Business Logic', () => {
     await page.fill('#hourlyRate', '50');
     await page.locator('#hourlyRate').blur();
     
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add 8 hours = $400
     await page.fill('#manualDate', today);
@@ -272,7 +280,7 @@ test.describe('Summary Calculations - Protected Business Logic', () => {
     await page.fill('#hourlyRate', '25');
     await page.locator('#hourlyRate').blur();
     
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add 10 hours = $250
     await page.fill('#manualDate', today);
@@ -308,7 +316,7 @@ test.describe('Daily Subtotals', () => {
     await page.locator('#hourlyRate').blur();
     
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = toLocalDate(today);
     
     // Add time entry for today
     await page.fill('#manualDate', todayStr);
@@ -334,11 +342,11 @@ test.describe('Daily Subtotals', () => {
     await page.locator('#hourlyRate').blur();
     
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = toLocalDate(today);
     
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = toLocalDate(yesterday);
     
     // Add entry for today
     await page.fill('#manualDate', todayStr);
@@ -411,7 +419,7 @@ test.describe('Settings', () => {
   });
 
   test('should update calculations when rate changes', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     
     // Add 8 hours
     await page.fill('#manualDate', today);
@@ -484,7 +492,7 @@ test.describe('i18n - Language Toggle', () => {
   });
 
   test('should translate dynamic time entry table headers', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
     await page.fill('#manualClockOut', '17:00');
@@ -519,7 +527,7 @@ test.describe('PDF Export', () => {
   });
 
   test('should trigger PDF download when clicked', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#hourlyRate', '50');
     await page.locator('#hourlyRate').blur();
     await page.fill('#manualDate', today);
@@ -552,7 +560,7 @@ test.describe('Edge Cases', () => {
   test('should handle zero hourly rate', async ({ page }) => {
     await page.fill('#hourlyRate', '0');
     await page.locator('#hourlyRate').blur();
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
     await page.fill('#manualClockOut', '17:00');
@@ -576,7 +584,7 @@ test.describe('Edge Cases', () => {
   test('should aggregate multiple entries on same day', async ({ page }) => {
     await page.fill('#hourlyRate', '10');
     await page.locator('#hourlyRate').blur();
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
 
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '08:00');
@@ -594,7 +602,7 @@ test.describe('Edge Cases', () => {
   });
 
   test('should handle deleting all entries back to empty state', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
     await page.fill('#manualClockOut', '17:00');
@@ -610,7 +618,7 @@ test.describe('Edge Cases', () => {
   test('should handle large hourly rate', async ({ page }) => {
     await page.fill('#hourlyRate', '9999');
     await page.locator('#hourlyRate').blur();
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
     await page.fill('#manualClockOut', '17:00');
@@ -635,7 +643,7 @@ test.describe('Mobile Viewport', () => {
   });
 
   test('should allow adding manual entry on mobile', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
     await page.fill('#manualClockOut', '17:00');
@@ -648,7 +656,7 @@ test.describe('Mobile Viewport', () => {
   });
 
   test('modal should be usable on mobile', async ({ page }) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDate(new Date());
     await page.fill('#manualDate', today);
     await page.fill('#manualClockIn', '09:00');
     await page.fill('#manualClockOut', '17:00');
@@ -661,5 +669,164 @@ test.describe('Mobile Viewport', () => {
     await expect(modal).toBeVisible();
     const box = await modal.boundingBox();
     expect(box.width).toBeLessThanOrEqual(375);
+  });
+});
+
+test.describe('Date Timezone Regression', () => {
+  test('clock out should use local date, not UTC date (late night)', async ({ page }) => {
+    // Simulate clock-in at 11 PM local time (next day in UTC for US timezones)
+    const lateNight = new Date();
+    lateNight.setHours(23, 0, 0, 0);
+    const expectedLocalDate = toLocalDate(lateNight);
+
+    await page.evaluate((clockInISO) => {
+      const state = JSON.parse(localStorage.getItem('timesheetState') || '{}');
+      state.isClockedIn = true;
+      state.clockInTime = clockInISO;
+      state.timeEntries = state.timeEntries || [];
+      localStorage.setItem('timesheetState', JSON.stringify(state));
+    }, lateNight.toISOString());
+    await page.reload();
+
+    await page.click('#clockBtn');
+
+    const entryDate = await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('timesheetState') || '{}');
+      return state.timeEntries[state.timeEntries.length - 1].date;
+    });
+    expect(entryDate).toBe(expectedLocalDate);
+  });
+
+  test('clock out should use local date for early morning clock-in', async ({ page }) => {
+    // Clock in at 12:30 AM — still today local, same in UTC
+    const earlyMorning = new Date();
+    earlyMorning.setHours(0, 30, 0, 0);
+    const expectedLocalDate = toLocalDate(earlyMorning);
+
+    await page.evaluate((clockInISO) => {
+      const state = JSON.parse(localStorage.getItem('timesheetState') || '{}');
+      state.isClockedIn = true;
+      state.clockInTime = clockInISO;
+      state.timeEntries = state.timeEntries || [];
+      localStorage.setItem('timesheetState', JSON.stringify(state));
+    }, earlyMorning.toISOString());
+    await page.reload();
+
+    await page.click('#clockBtn');
+
+    const entryDate = await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('timesheetState') || '{}');
+      return state.timeEntries[state.timeEntries.length - 1].date;
+    });
+    expect(entryDate).toBe(expectedLocalDate);
+  });
+
+  test('default manual date input should use local date', async ({ page }) => {
+    const expectedLocalDate = toLocalDate(new Date());
+    const manualDate = await page.inputValue('#manualDate');
+    expect(manualDate).toBe(expectedLocalDate);
+  });
+
+  test('default expense date input should use local date', async ({ page }) => {
+    const expectedLocalDate = toLocalDate(new Date());
+    const expenseDate = await page.inputValue('#expenseDate');
+    expect(expenseDate).toBe(expectedLocalDate);
+  });
+
+  test('this week filter should use local dates', async ({ page }) => {
+    await page.click('[onclick="setThisWeek()"]');
+
+    const fromValue = await page.inputValue('#filterFrom');
+    const toValue = await page.inputValue('#filterTo');
+
+    // Both should be valid YYYY-MM-DD and within 6 days of each other
+    expect(fromValue).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(toValue).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+    const from = new Date(fromValue + 'T00:00:00');
+    const to = new Date(toValue + 'T00:00:00');
+    const diffDays = (to - from) / (1000 * 60 * 60 * 24);
+    expect(diffDays).toBe(6);
+
+    // Today should fall within the week range
+    const today = toLocalDate(new Date());
+    expect(today >= fromValue && today <= toValue).toBe(true);
+  });
+
+  test('this month filter should use local dates', async ({ page }) => {
+    await page.click('[onclick="setThisMonth()"]');
+
+    const fromValue = await page.inputValue('#filterFrom');
+    const toValue = await page.inputValue('#filterTo');
+
+    const today = new Date();
+    const expectedFrom = toLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    const expectedTo = toLocalDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+
+    expect(fromValue).toBe(expectedFrom);
+    expect(toValue).toBe(expectedTo);
+  });
+
+  test('time entry date should display correctly in table', async ({ page }) => {
+    const today = toLocalDate(new Date());
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '23:00');
+    await page.fill('#manualClockOut', '23:30');
+    await page.click('[data-i18n="addEntry"]');
+
+    // The table should show today's date, not tomorrow
+    const entryDate = await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('timesheetState') || '{}');
+      return state.timeEntries[0].date;
+    });
+    expect(entryDate).toBe(today);
+  });
+
+  test('daily breakdown should group by correct local date', async ({ page }) => {
+    await page.fill('#hourlyRate', '10');
+    await page.locator('#hourlyRate').blur();
+
+    const today = toLocalDate(new Date());
+    // Add two entries on same date
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '22:00');
+    await page.fill('#manualClockOut', '23:00');
+    await page.click('[data-i18n="addEntry"]');
+
+    await page.fill('#manualDate', today);
+    await page.fill('#manualClockIn', '23:00');
+    await page.fill('#manualClockOut', '23:30');
+    await page.click('[data-i18n="addEntry"]');
+
+    // Both should appear under same day in daily breakdown
+    const dayItems = page.locator('#dailySubtotals .daily-item');
+    await expect(dayItems).toHaveCount(1);
+  });
+
+  test('clock in/out round-trip preserves local date through display', async ({ page }) => {
+    // Capture local date BEFORE clocking in (same moment as the app will see)
+    const dateAtClockIn = toLocalDate(new Date());
+
+    // Clock in
+    await page.click('#clockBtn');
+    await expect(page.locator('#status')).toHaveText('Clocked In');
+
+    await page.waitForTimeout(1000);
+
+    // Clock out
+    await page.click('#clockBtn');
+    await expect(page.locator('#status')).toHaveText('Clocked Out');
+
+    // Get the stored entry date from localStorage
+    const storedDate = await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('timesheetState') || '{}');
+      return state.timeEntries[0].date;
+    });
+
+    // The stored date should match the local date captured at clock-in time
+    expect(storedDate).toBe(dateAtClockIn);
+
+    // Verify the breakdown renders an entry (not empty)
+    await expect(page.locator('#dailySubtotals .daily-item')).toHaveCount(1);
   });
 });
