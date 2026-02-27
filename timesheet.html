@@ -1294,6 +1294,12 @@
             return `${year}-${month}-${day}`;
         }
 
+        // Parse YYYY-MM-DD string as local date (not UTC)
+        function parseLocalDate(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
         // Save settings
         function saveSettings() {
             state.hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
@@ -1641,7 +1647,7 @@
             }
 
             // Sort by date descending
-            const sorted = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sorted = [...state.expenses].sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
             const locale = getLocale();
 
             const table = document.createElement('table');
@@ -1665,7 +1671,7 @@
                 const tr = document.createElement('tr');
 
                 const tdDate = document.createElement('td');
-                tdDate.textContent = new Date(expense.date).toLocaleDateString(locale);
+                tdDate.textContent = parseLocalDate(expense.date).toLocaleDateString(locale);
                 tr.appendChild(tdDate);
 
                 const tdDesc = document.createElement('td');
@@ -1749,13 +1755,13 @@
 
             if (!fromDate || !toDate) return;
 
-            const from = new Date(fromDate);
-            const to = new Date(toDate);
+            const from = parseLocalDate(fromDate);
+            const to = parseLocalDate(toDate);
             to.setHours(23, 59, 59, 999); // Include entire end day
 
             // Calculate total hours in period
             const filteredEntries = state.timeEntries.filter(entry => {
-                const entryDate = new Date(entry.date);
+                const entryDate = parseLocalDate(entry.date);
                 return entryDate >= from && entryDate <= to;
             });
             const totalHours = filteredEntries.reduce((sum, entry) => sum + entry.hours, 0);
@@ -1765,7 +1771,7 @@
 
             // Calculate expenses by type in period
             const filteredExpenses = state.expenses.filter(expense => {
-                const expenseDate = new Date(expense.date);
+                const expenseDate = parseLocalDate(expense.date);
                 return expenseDate >= from && expenseDate <= to;
             });
             
@@ -1842,7 +1848,7 @@
                 // Daily total
                 const dayTotal = dayEarnings + dayReimbursable - dayDeductions;
 
-                const formattedDate = new Date(date).toLocaleDateString(locale, {
+                const formattedDate = parseLocalDate(date).toLocaleDateString(locale, {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric'
@@ -1932,25 +1938,25 @@
             doc.text(t('timesheetReport'), doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
 
             // Period subtitle
-            const fromFormatted = new Date(fromDate).toLocaleDateString(locale);
-            const toFormatted = new Date(toDate).toLocaleDateString(locale);
+            const fromFormatted = parseLocalDate(fromDate).toLocaleDateString(locale);
+            const toFormatted = parseLocalDate(toDate).toLocaleDateString(locale);
             doc.setFontSize(12);
             doc.text(`${t('period')}: ${fromFormatted} - ${toFormatted}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
 
             let yPos = 40;
 
             // Filter entries and expenses to the selected period
-            const from = new Date(fromDate);
-            const to = new Date(toDate);
+            const from = parseLocalDate(fromDate);
+            const to = parseLocalDate(toDate);
             to.setHours(23, 59, 59, 999);
 
             const filteredEntries = state.timeEntries.filter(entry => {
-                const entryDate = new Date(entry.date);
+                const entryDate = parseLocalDate(entry.date);
                 return entryDate >= from && entryDate <= to;
             });
 
             const filteredExpenses = state.expenses.filter(expense => {
-                const expenseDate = new Date(expense.date);
+                const expenseDate = parseLocalDate(expense.date);
                 return expenseDate >= from && expenseDate <= to;
             });
 
@@ -1987,7 +1993,7 @@
                     const typeLabel = type === 'reimburse' ? t('reimburse') : t('deduct');
                     const prefix = type === 'deduct' ? '-' : '+';
                     return [
-                        new Date(expense.date).toLocaleDateString(locale),
+                        parseLocalDate(expense.date).toLocaleDateString(locale),
                         expense.description,
                         typeLabel,
                         `${prefix}$${expense.amount.toFixed(2)}`
@@ -2034,16 +2040,16 @@
         // Print-based PDF fallback (when jsPDF CDN is blocked, e.g. file:// protocol)
         function exportPrintFallback(fromDate, toDate) {
             const locale = getLocale();
-            const from = new Date(fromDate);
-            const to = new Date(toDate);
+            const from = parseLocalDate(fromDate);
+            const to = parseLocalDate(toDate);
             to.setHours(23, 59, 59, 999);
 
             const filteredEntries = state.timeEntries.filter(entry => {
-                const entryDate = new Date(entry.date);
+                const entryDate = parseLocalDate(entry.date);
                 return entryDate >= from && entryDate <= to;
             });
             const filteredExpenses = state.expenses.filter(expense => {
-                const expenseDate = new Date(expense.date);
+                const expenseDate = parseLocalDate(expense.date);
                 return expenseDate >= from && expenseDate <= to;
             });
 
@@ -2057,17 +2063,17 @@
                 .reduce((sum, e) => sum + e.amount, 0);
             const totalDue = grossEarnings + reimbursable - deductions;
 
-            const fromFmt = new Date(fromDate).toLocaleDateString(locale);
-            const toFmt = new Date(toDate).toLocaleDateString(locale);
+            const fromFmt = parseLocalDate(fromDate).toLocaleDateString(locale);
+            const toFmt = parseLocalDate(toDate).toLocaleDateString(locale);
 
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('Pop-up blocked. Please allow pop-ups for this page.');
+                return;
+            }
             const doc = printWindow.document;
-            doc.open();
-
-            const style = doc.createElement('style');
-            style.textContent = 'body{font-family:sans-serif;padding:20px;color:#222}h1{text-align:center;font-size:20px}h2{font-size:14px;margin-top:20px;color:#555}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:12px}th{background:#f0f0f0}.summary{margin-top:20px;font-size:13px;line-height:1.8}.total{font-size:16px;font-weight:bold;margin-top:8px}@media print{body{padding:0}}';
-            doc.head.appendChild(style);
-            doc.title = 'Timesheet ' + fromDate + ' to ' + toDate;
+            doc.write('<!DOCTYPE html><html><head><title>Timesheet ' + fromDate + ' to ' + toDate + '</title><style>body{font-family:sans-serif;padding:20px;color:#222}h1{text-align:center;font-size:20px}h2{font-size:14px;margin-top:20px;color:#555}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:12px}th{background:#f0f0f0}.summary{margin-top:20px;font-size:13px;line-height:1.8}.total{font-size:16px;font-weight:bold;margin-top:8px}@media print{body{padding:0}}</style></head><body></body></html>');
+            doc.close();
 
             const h1 = doc.createElement('h1');
             h1.textContent = t('timesheetReport');
@@ -2137,7 +2143,7 @@
                     const prefix = type === 'deduct' ? '-' : '+';
                     const tr = doc.createElement('tr');
                     [
-                        new Date(expense.date).toLocaleDateString(locale),
+                        parseLocalDate(expense.date).toLocaleDateString(locale),
                         expense.description,
                         type === 'reimburse' ? t('reimburse') : t('deduct'),
                         prefix + '$' + expense.amount.toFixed(2)
@@ -2171,8 +2177,7 @@
             summary.appendChild(totalDiv);
             doc.body.appendChild(summary);
 
-            doc.close();
-            printWindow.onload = function() { printWindow.print(); };
+            setTimeout(function() { printWindow.print(); }, 300);
         }
 
         // PWA Install handling
