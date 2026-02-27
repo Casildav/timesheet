@@ -815,12 +815,29 @@
             }
 
             table {
-                font-size: 0.85rem;
-                min-width: 420px;
+                font-size: 0.78rem;
+                min-width: 0;
+                width: 100%;
             }
 
             th, td {
-                padding: 10px 8px;
+                padding: 8px 4px;
+            }
+
+            /* Keep action buttons visible without horizontal scroll */
+            .actions-cell {
+                position: sticky;
+                right: 0;
+                background: var(--surface);
+                padding: 8px 2px;
+            }
+
+            .btn-icon {
+                min-width: 36px;
+                min-height: 36px;
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
             }
 
             .summary-item .value {
