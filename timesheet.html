@@ -1275,6 +1275,23 @@
                     ...expense,
                     type: expense.type || 'reimburse'
                 }));
+
+                // Migrate: recalculate entry dates from clockIn using local timezone
+                // Fixes entries stored with UTC-derived dates (off by one day)
+                if (!parsed._dateMigrated) {
+                    state.timeEntries = state.timeEntries.map(entry => {
+                        if (entry.clockIn) {
+                            const ci = new Date(entry.clockIn);
+                            const y = ci.getFullYear();
+                            const m = String(ci.getMonth() + 1).padStart(2, '0');
+                            const d = String(ci.getDate()).padStart(2, '0');
+                            return { ...entry, date: `${y}-${m}-${d}` };
+                        }
+                        return entry;
+                    });
+                    state._dateMigrated = true;
+                    localStorage.setItem('timesheetState', JSON.stringify(state));
+                }
             }
             
             // Set default date filter to this month
