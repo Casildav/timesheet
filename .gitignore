@@ -8,3 +8,4 @@ playwright/.cache/
 
 # OS files
 .DS_Store
+.git.nosync
